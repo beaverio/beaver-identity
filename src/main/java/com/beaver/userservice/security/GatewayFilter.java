@@ -35,9 +35,6 @@ public class GatewayFilter implements Filter {
         // Debug logging - remove after fixing
         String receivedSecret = httpRequest.getHeader("X-Service-Secret");
         String sourceHeader = httpRequest.getHeader("X-Source");
-        System.out.println("DEBUG: Expected secret: '" + expectedSecret + "'");
-        System.out.println("DEBUG: Received secret: '" + receivedSecret + "'");
-        System.out.println("DEBUG: Source header: '" + sourceHeader + "'");
 
         // Validate X-Service-Secret header (shared secret)
         if (!expectedSecret.equals(receivedSecret)) {
