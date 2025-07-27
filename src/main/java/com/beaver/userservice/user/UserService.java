@@ -23,8 +23,8 @@ public class UserService {
     }
 
     @CachePut(value = "users", key = "#user.email")
-    public void saveUser(User user) {
-        userRepository.save(user);
+    public User saveUser(User user) {
+        return userRepository.save(user);
     }
 
     @Cacheable(value = "users", key = "#email")
