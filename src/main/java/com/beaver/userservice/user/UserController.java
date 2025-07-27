@@ -1,6 +1,5 @@
 package com.beaver.userservice.user;
 
-import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,3 +42,4 @@ public class UserController {
 //        return ResponseEntity.noContent().build();
 //    }
 }
+
