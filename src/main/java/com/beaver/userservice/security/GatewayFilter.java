@@ -15,10 +15,10 @@ import java.io.IOException;
 @Slf4j
 public class GatewayFilter implements Filter {
 
-    private final String expectedSecret;
+    private final String gatewaySecret;
 
-    public GatewayFilter(@Value("${service.secret}") String expectedSecret) {
-        this.expectedSecret = expectedSecret;
+    public GatewayFilter(@Value("${gateway.secret}") String gatewaySecret) {
+        this.gatewaySecret = gatewaySecret;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class GatewayFilter implements Filter {
         String sourceHeader = httpRequest.getHeader("X-Source");
 
         // Validate X-Service-Secret header (shared secret)
-        if (!expectedSecret.equals(receivedSecret)) {
+        if (!gatewaySecret.equals(receivedSecret)) {
             httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
             httpResponse.setContentType("application/json");
             httpResponse.getWriter().write("{\"error\":\"Forbidden: Invalid service secret\"}");

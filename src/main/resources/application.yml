@@ -3,7 +3,7 @@ server:
   servlet:
     context-path: /users
 
-service:
+gateway:
   secret: ${GATEWAY_SECRET}
 
 spring:

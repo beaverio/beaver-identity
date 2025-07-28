@@ -1,5 +1,7 @@
 package com.beaver.userservice.internal;
 
+import com.beaver.userservice.common.exception.InvalidUserDataException;
+import com.beaver.userservice.common.exception.UserAlreadyExistsException;
 import com.beaver.userservice.user.User;
 import com.beaver.userservice.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,30 +44,25 @@ public class InternalUserController {
 
     @GetMapping("/users/{userId}")
     public ResponseEntity<UserDetailsResponse> getUserById(@PathVariable UUID userId) {
-        try {
-            Optional<User> userOpt = userService.findById(userId);
+        Optional<User> userOpt = userService.findById(userId);
 
-            if (userOpt.isPresent()) {
-                User user = userOpt.get();
-                return ResponseEntity.ok(UserDetailsResponse.found(
-                        user.getId().toString(),
-                        user.getEmail(),
-                        user.getName(),
-                        user.isActive()
-                ));
-            }
-        } catch (IllegalArgumentException e) {
-            // Invalid UUID format
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            return ResponseEntity.ok(UserDetailsResponse.found(
+                    user.getId().toString(),
+                    user.getEmail(),
+                    user.getName(),
+                    user.isActive()
+            ));
         }
 
         return ResponseEntity.ok(UserDetailsResponse.notFound());
     }
 
     @PostMapping("/users")
-    public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<Void> createUser(@RequestBody CreateUserRequest request) {
         if (userService.findByEmail(request.email()).isPresent()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "User already exists with this email"));
+            throw new UserAlreadyExistsException(request.email());
         }
 
         try {
@@ -80,8 +76,7 @@ public class InternalUserController {
             userService.saveUser(user);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Failed to create user: " + e.getMessage()));
+            throw new InvalidUserDataException("Failed to create user: " + e.getMessage());
         }
     }
 
