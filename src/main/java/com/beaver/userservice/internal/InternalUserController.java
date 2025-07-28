@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/internal")
@@ -40,6 +41,27 @@ public class InternalUserController {
         return ResponseEntity.ok(UserCredentialsResponse.invalid());
     }
 
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<UserDetailsResponse> getUserById(@PathVariable UUID userId) {
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                return ResponseEntity.ok(UserDetailsResponse.found(
+                        user.getId().toString(),
+                        user.getEmail(),
+                        user.getName(),
+                        user.isActive()
+                ));
+            }
+        } catch (IllegalArgumentException e) {
+            // Invalid UUID format
+        }
+
+        return ResponseEntity.ok(UserDetailsResponse.notFound());
+    }
+
     @PostMapping("/users")
     public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
         if (userService.findByEmail(request.email()).isPresent()) {
@@ -63,7 +85,6 @@ public class InternalUserController {
         }
     }
 
-    // DTOs
     public record CredentialsRequest(String email, String password) {}
     public record CreateUserRequest(String email, String password, String name) {}
 
@@ -76,6 +97,18 @@ public class InternalUserController {
 
         public static UserCredentialsResponse valid(String userId, String email, String name, boolean isActive) {
             return new UserCredentialsResponse(true, userId, email, name, isActive);
+        }
+    }
+
+    public record UserDetailsResponse(
+            boolean found, String userId, String email, String name, boolean isActive) {
+
+        public static UserDetailsResponse notFound() {
+            return new UserDetailsResponse(false, null, null, null, false);
+        }
+
+        public static UserDetailsResponse found(String userId, String email, String name, boolean isActive) {
+            return new UserDetailsResponse(true, userId, email, name, isActive);
         }
     }
 }

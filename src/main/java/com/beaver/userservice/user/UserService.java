@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -20,6 +21,11 @@ public class UserService {
     @Cacheable(value = "users", key = "#email")
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    @Cacheable(value = "users", key = "#id")
+    public Optional<User> findById(UUID id) {
+        return userRepository.findById(id);
     }
 
     @CachePut(value = "users", key = "#user.email")
