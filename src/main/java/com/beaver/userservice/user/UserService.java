@@ -1,5 +1,6 @@
 package com.beaver.userservice.user;
 
+import com.beaver.userservice.common.exception.UserNotFoundException;
 import com.beaver.userservice.user.dto.UpdateSelf;
 import com.beaver.userservice.user.mapper.IUserMapper;
 import lombok.RequiredArgsConstructor;
@@ -24,19 +25,13 @@ public class UserService {
     }
 
     @Cacheable(value = "users", key = "#id")
-    public Optional<User> findById(UUID id) {
-        return userRepository.findById(id);
+    public User findById(UUID id) {
+        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
     @CachePut(value = "users", key = "#user.email")
     public User saveUser(User user) {
         return userRepository.save(user);
-    }
-
-    @Cacheable(value = "users", key = "#email")
-    public User getUserSelf(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @CachePut(value = "users", key = "#email")
@@ -48,9 +43,9 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
-    @CacheEvict(value = "users", key = "#email")
-    public void deleteUser(String email) {
-        User existingUser = userRepository.findByEmail(email)
+    @CacheEvict(value = "users", key = "#id")
+    public void deleteUser(UUID id) {
+        User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         userRepository.delete(existingUser);

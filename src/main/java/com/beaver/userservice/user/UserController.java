@@ -1,8 +1,11 @@
 package com.beaver.userservice.user;
 
+import com.beaver.userservice.user.dto.UserDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 public class UserController {
@@ -14,17 +17,11 @@ public class UserController {
     }
 
     @GetMapping(value = "/self", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getSelf() {
-        return ResponseEntity.ok("Hello from user-service");
+    public ResponseEntity<UserDto> getSelf(@RequestHeader("X-User-Id") UUID id) {
+        User user = userService.findById(id);
+        return ResponseEntity.ok(UserDto.fromEntity(user));
     }
 
-//    @GetMapping(value = "/self", produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<UserDto> getSelf(Authentication authentication) {
-//        String email = authentication.getName();
-//        User user = userService.getUserSelf(email);
-//        return ResponseEntity.ok(UserDto.fromEntity(user));
-//    }
-//
 //    @PatchMapping(value = "/self", produces = MediaType.APPLICATION_JSON_VALUE)
 //    public ResponseEntity<UserDto> updateSelf(
 //            Authentication authentication,
@@ -34,12 +31,11 @@ public class UserController {
 //        User user = userService.updateSelf(email, updateProfileRequest);
 //        return ResponseEntity.ok(UserDto.fromEntity(user));
 //    }
-//
-//    @DeleteMapping(value = "/self")
-//    public ResponseEntity<Void> deleteSelf(Authentication authentication) {
-//        String email = authentication.getName();
-//        userService.deleteUser(email);
-//        return ResponseEntity.noContent().build();
-//    }
+
+    @DeleteMapping(value = "/self")
+    public ResponseEntity<Void> deleteSelf(@RequestHeader("X-User-Id") UUID id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
 }
 

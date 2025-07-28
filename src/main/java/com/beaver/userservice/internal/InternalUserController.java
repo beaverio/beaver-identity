@@ -2,14 +2,15 @@ package com.beaver.userservice.internal;
 
 import com.beaver.userservice.common.exception.InvalidUserDataException;
 import com.beaver.userservice.common.exception.UserAlreadyExistsException;
+import com.beaver.userservice.common.exception.UserNotFoundException;
 import com.beaver.userservice.user.User;
 import com.beaver.userservice.user.UserService;
+import com.beaver.userservice.user.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -21,42 +22,17 @@ public class InternalUserController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/validate-credentials")
-    public ResponseEntity<UserCredentialsResponse> validateCredentials(
+    public ResponseEntity<UserDto> validateCredentials(
             @RequestBody CredentialsRequest request) {
 
-        Optional<User> userOpt = userService.findByEmail(request.email());
+        User user = userService.findByEmail(request.email())
+                .orElseThrow(() -> new InvalidUserDataException("Invalid credentials"));
 
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-
-            if (user.isActive() && passwordEncoder.matches(request.password(), user.getPassword())) {
-                return ResponseEntity.ok(UserCredentialsResponse.valid(
-                        user.getId().toString(),
-                        user.getEmail(),
-                        user.getName(),
-                        user.isActive()
-                ));
-            }
+        if (user.isActive() && passwordEncoder.matches(request.password(), user.getPassword())) {
+            return ResponseEntity.ok(UserDto.fromEntity(user));
         }
 
-        return ResponseEntity.ok(UserCredentialsResponse.invalid());
-    }
-
-    @GetMapping("/users/{userId}")
-    public ResponseEntity<UserDetailsResponse> getUserById(@PathVariable UUID userId) {
-        Optional<User> userOpt = userService.findById(userId);
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            return ResponseEntity.ok(UserDetailsResponse.found(
-                    user.getId().toString(),
-                    user.getEmail(),
-                    user.getName(),
-                    user.isActive()
-            ));
-        }
-
-        return ResponseEntity.ok(UserDetailsResponse.notFound());
+        throw new InvalidUserDataException("Invalid credentials");
     }
 
     @PostMapping("/users")
@@ -80,30 +56,12 @@ public class InternalUserController {
         }
     }
 
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable UUID userId) {
+        User user = userService.findById(userId);
+        return ResponseEntity.ok(UserDto.fromEntity(user));
+    }
+
     public record CredentialsRequest(String email, String password) {}
     public record CreateUserRequest(String email, String password, String name) {}
-
-    public record UserCredentialsResponse(
-            boolean isValid, String userId, String email, String name, boolean isActive) {
-
-        public static UserCredentialsResponse invalid() {
-            return new UserCredentialsResponse(false, null, null, null, false);
-        }
-
-        public static UserCredentialsResponse valid(String userId, String email, String name, boolean isActive) {
-            return new UserCredentialsResponse(true, userId, email, name, isActive);
-        }
-    }
-
-    public record UserDetailsResponse(
-            boolean found, String userId, String email, String name, boolean isActive) {
-
-        public static UserDetailsResponse notFound() {
-            return new UserDetailsResponse(false, null, null, null, false);
-        }
-
-        public static UserDetailsResponse found(String userId, String email, String name, boolean isActive) {
-            return new UserDetailsResponse(true, userId, email, name, isActive);
-        }
-    }
 }
