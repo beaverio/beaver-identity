@@ -1,7 +1,7 @@
 package com.beaver.userservice.user.dto;
 
 import com.beaver.userservice.common.dto.BaseDto;
-import com.beaver.userservice.user.User;
+import com.beaver.userservice.user.entity.User;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

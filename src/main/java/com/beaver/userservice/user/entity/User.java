@@ -1,4 +1,4 @@
-package com.beaver.userservice.user;
+package com.beaver.userservice.user.entity;
 
 import com.beaver.userservice.common.entity.BaseEntity;
 import jakarta.persistence.Column;

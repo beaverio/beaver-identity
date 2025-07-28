@@ -2,10 +2,12 @@ package com.beaver.userservice.internal;
 
 import com.beaver.userservice.common.exception.InvalidUserDataException;
 import com.beaver.userservice.common.exception.UserAlreadyExistsException;
-import com.beaver.userservice.common.exception.UserNotFoundException;
-import com.beaver.userservice.user.User;
+import com.beaver.userservice.internal.dto.CreateUserRequest;
+import com.beaver.userservice.internal.dto.CredentialsRequest;
+import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.user.UserService;
 import com.beaver.userservice.user.dto.UserDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,8 +24,7 @@ public class InternalUserController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/validate-credentials")
-    public ResponseEntity<UserDto> validateCredentials(
-            @RequestBody CredentialsRequest request) {
+    public ResponseEntity<UserDto> validateCredentials(@Valid @RequestBody CredentialsRequest request) {
 
         User user = userService.findByEmail(request.email())
                 .orElseThrow(() -> new InvalidUserDataException("Invalid credentials"));
@@ -36,7 +37,7 @@ public class InternalUserController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<Void> createUser(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<Void> createUser(@Valid @RequestBody CreateUserRequest request) {
         if (userService.findByEmail(request.email()).isPresent()) {
             throw new UserAlreadyExistsException(request.email());
         }
@@ -61,7 +62,4 @@ public class InternalUserController {
         User user = userService.findById(userId);
         return ResponseEntity.ok(UserDto.fromEntity(user));
     }
-
-    public record CredentialsRequest(String email, String password) {}
-    public record CreateUserRequest(String email, String password, String name) {}
 }

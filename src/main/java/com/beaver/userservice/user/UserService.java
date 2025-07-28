@@ -2,6 +2,7 @@ package com.beaver.userservice.user;
 
 import com.beaver.userservice.common.exception.UserNotFoundException;
 import com.beaver.userservice.user.dto.UpdateSelf;
+import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.user.mapper.IUserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;

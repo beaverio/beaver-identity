@@ -1,6 +1,6 @@
 package com.beaver.userservice.config;
 
-import com.beaver.userservice.common.dto.ErrorResponseDto;
+import com.beaver.userservice.common.dto.ErrorResponse;
 import com.beaver.userservice.common.exception.InvalidUserDataException;
 import com.beaver.userservice.common.exception.UserAlreadyExistsException;
 import com.beaver.userservice.common.exception.UserNotFoundException;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponseDto> handleValidationErrors(
+    public ResponseEntity<ErrorResponse> handleValidationErrors(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<String> details = ex.getBindingResult()
                 .getFieldErrors()
@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.toList());
 
-        ErrorResponseDto errorResponse = ErrorResponseDto.of(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation Failed",
                 "Invalid input data",
@@ -38,9 +38,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponseDto> handleUserAlreadyExists(
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
             UserAlreadyExistsException ex, HttpServletRequest request) {
-        ErrorResponseDto errorResponse = ErrorResponseDto.of(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.CONFLICT.value(),
                 "User Already Exists",
                 ex.getMessage(),
@@ -51,9 +51,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponseDto> handleUserNotFound(
+    public ResponseEntity<ErrorResponse> handleUserNotFound(
             UserNotFoundException ex, HttpServletRequest request) {
-        ErrorResponseDto errorResponse = ErrorResponseDto.of(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.NOT_FOUND.value(),
                 "User Not Found",
                 ex.getMessage(),
@@ -64,9 +64,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidUserDataException.class)
-    public ResponseEntity<ErrorResponseDto> handleInvalidUserData(
+    public ResponseEntity<ErrorResponse> handleInvalidUserData(
             InvalidUserDataException ex, HttpServletRequest request) {
-        ErrorResponseDto errorResponse = ErrorResponseDto.of(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Invalid User Data",
                 ex.getMessage(),
@@ -77,9 +77,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponseDto> handleIllegalArgument(
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest request) {
-        ErrorResponseDto errorResponse = ErrorResponseDto.of(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Invalid Request",
                 ex.getMessage(),
@@ -90,9 +90,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDto> handleGenericException(
+    public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
-        ErrorResponseDto errorResponse = ErrorResponseDto.of(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
                 "An unexpected error occurred",

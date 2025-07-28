@@ -1,6 +1,6 @@
 package com.beaver.userservice.user.mapper;
 
-import com.beaver.userservice.user.User;
+import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.user.dto.UpdateSelf;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;

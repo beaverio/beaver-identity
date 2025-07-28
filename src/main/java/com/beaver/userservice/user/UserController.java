@@ -1,6 +1,7 @@
 package com.beaver.userservice.user;
 
 import com.beaver.userservice.user.dto.UserDto;
+import com.beaver.userservice.user.entity.User;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
