@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -20,35 +21,46 @@ public class UserService {
     private final IUserRepository userRepository;
     private final IUserMapper userMapper;
 
-    @Cacheable(value = "users", key = "#email")
+    @Cacheable(value = "users", key = "'email:' + #email")
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
-    @Cacheable(value = "users", key = "#id")
+    @Cacheable(value = "users", key = "'id:' + #id")
     public User findById(UUID id) {
-        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
-    @CachePut(value = "users", key = "#user.email")
+    @Caching(put = {
+            @CachePut(value = "users", key = "'id:' + #user.id"),
+            @CachePut(value = "users", key = "'email:' + #user.email")
+    })
     public User saveUser(User user) {
         return userRepository.save(user);
     }
 
-    @CachePut(value = "users", key = "#email")
-    public User updateSelf(String email, UpdateSelf updateRequest) {
-        User existingUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    @Caching(put = {
+            @CachePut(value = "users", key = "'id:' + #id"),
+            @CachePut(value = "users", key = "'email:' + #result.email")
+    })
+    public User updateSelf(UUID id, UpdateSelf updateRequest) {
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         userMapper.mapToEntity(updateRequest, existingUser);
         return userRepository.save(existingUser);
     }
 
-    @CacheEvict(value = "users", key = "#id")
-    public void deleteUser(UUID id) {
+    @Caching(evict = {
+        @CacheEvict(value = "users", key = "'id:' + #id"),
+        @CacheEvict(value = "users", key = "'email:' + #result.email")
+    })
+    public User deleteUser(UUID id) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         userRepository.delete(existingUser);
+        return existingUser;
     }
 }

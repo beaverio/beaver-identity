@@ -1,7 +1,9 @@
 package com.beaver.userservice.user;
 
+import com.beaver.userservice.user.dto.UpdateSelf;
 import com.beaver.userservice.user.dto.UserDto;
 import com.beaver.userservice.user.entity.User;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,15 +25,14 @@ public class UserController {
         return ResponseEntity.ok(UserDto.fromEntity(user));
     }
 
-//    @PatchMapping(value = "/self", produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<UserDto> updateSelf(
-//            Authentication authentication,
-//            @Valid @RequestBody UpdateSelf updateProfileRequest)
-//    {
-//        String email = authentication.getName();
-//        User user = userService.updateSelf(email, updateProfileRequest);
-//        return ResponseEntity.ok(UserDto.fromEntity(user));
-//    }
+    @PatchMapping(value = "/self", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserDto> updateSelf(
+            @RequestHeader("X-User-Id") UUID id,
+            @Valid @RequestBody UpdateSelf updateSelf)
+    {
+        User user = userService.updateSelf(id, updateSelf);
+        return ResponseEntity.ok(UserDto.fromEntity(user));
+    }
 
     @DeleteMapping(value = "/self")
     public ResponseEntity<Void> deleteSelf(@RequestHeader("X-User-Id") UUID id) {
