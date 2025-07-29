@@ -4,6 +4,8 @@ import com.beaver.userservice.common.exception.InvalidUserDataException;
 import com.beaver.userservice.common.exception.UserAlreadyExistsException;
 import com.beaver.userservice.internal.dto.CreateUserRequest;
 import com.beaver.userservice.internal.dto.CredentialsRequest;
+import com.beaver.userservice.internal.dto.UpdateEmail;
+import com.beaver.userservice.internal.dto.UpdatePassword;
 import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.user.UserService;
 import com.beaver.userservice.user.dto.UserDto;
@@ -61,5 +63,23 @@ public class InternalUserController {
     public ResponseEntity<UserDto> getUserById(@PathVariable UUID userId) {
         User user = userService.findById(userId);
         return ResponseEntity.ok(UserDto.fromEntity(user));
+    }
+
+    @PatchMapping("/users/{userId}/email")
+    public ResponseEntity<UserDto> updateEmail(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdateEmail updateEmail)
+    {
+        User user = userService.updateEmail(userId, updateEmail);
+        return ResponseEntity.ok(UserDto.fromEntity(user));
+    }
+
+    @PatchMapping("/users/{userId}/password")
+    public ResponseEntity<Void> updatePassword(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdatePassword updatePassword)
+    {
+        userService.updatePassword(userId, updatePassword);
+        return ResponseEntity.noContent().build();
     }
 }
