@@ -6,17 +6,16 @@ import com.beaver.userservice.permission.IRoleRepository;
 import com.beaver.userservice.permission.RoleService;
 import com.beaver.userservice.permission.entity.Role;
 import com.beaver.userservice.user.IUserRepository;
+import com.beaver.userservice.user.UserService;
 import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.workspace.dto.CreateWorkspaceRequest;
 import com.beaver.userservice.workspace.enums.PlanType;
 import com.beaver.userservice.workspace.entity.Workspace;
-import com.beaver.userservice.workspace.enums.WorkspaceStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -28,18 +27,14 @@ public class WorkspaceService {
     private final IWorkspaceRepository workspaceRepository;
     private final RoleService roleService;
     private final MembershipService membershipService;
-    private final IUserRepository userRepository;
-    private final IRoleRepository roleRepository;
+    private final UserService userService;
 
     public Workspace createWorkspace(CreateWorkspaceRequest request, UUID ownerId) {
         log.info("Creating workspace '{}' for user: {}", request.name(), ownerId);
 
-        // Create workspace
         Workspace workspace = Workspace.builder()
                 .name(request.name())
-                .status(WorkspaceStatus.TRIAL)
                 .plan(PlanType.STARTER)
-                .trialEndsAt(LocalDateTime.now().plusDays(14)) // 14-day trial
                 .build();
 
         workspace = workspaceRepository.save(workspace);
@@ -49,12 +44,8 @@ public class WorkspaceService {
         roleService.createDefaultRoles(workspace.getId());
 
         // Add creator as owner
-        Role ownerRole = roleRepository.findByWorkspaceIdAndName(workspace.getId(), "Owner")
-                .orElseThrow(() -> new IllegalStateException("Owner role not found"));
-
-        User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new UserNotFoundException("Owner user not found: " + ownerId));
-
+        Role ownerRole = roleService.findByWorkspaceIdAndName(workspace.getId(), "Owner");
+        User owner = userService.findById(ownerId);
         membershipService.addUserToWorkspace(owner, workspace, ownerRole);
         log.info("Added user {} as owner of workspace {}", ownerId, workspace.getId());
 
