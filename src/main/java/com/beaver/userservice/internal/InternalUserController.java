@@ -1,11 +1,16 @@
 package com.beaver.userservice.internal;
 
+import com.beaver.userservice.auth.AuthService;
+import com.beaver.userservice.auth.dto.UserWithWorkspacesDto;
 import com.beaver.userservice.common.exception.InvalidUserDataException;
 import com.beaver.userservice.common.exception.UserAlreadyExistsException;
+import com.beaver.userservice.common.exception.UserNotFoundException;
 import com.beaver.userservice.internal.dto.CreateUserRequest;
 import com.beaver.userservice.internal.dto.CredentialsRequest;
 import com.beaver.userservice.internal.dto.UpdateEmail;
 import com.beaver.userservice.internal.dto.UpdatePassword;
+import com.beaver.userservice.membership.dto.WorkspaceMembershipDto;
+import com.beaver.userservice.membership.entity.WorkspaceMembership;
 import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.user.UserService;
 import com.beaver.userservice.user.dto.UserDto;
@@ -23,19 +28,38 @@ import java.util.UUID;
 public class InternalUserController {
 
     private final UserService userService;
+    private final AuthService authService;
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/validate-credentials")
     public ResponseEntity<UserDto> validateCredentials(@Valid @RequestBody CredentialsRequest request) {
-
         User user = userService.findByEmail(request.email())
-                .orElseThrow(() -> new InvalidUserDataException("Invalid credentials"));
+                .orElseThrow(() -> new UserNotFoundException("Email not found"));
 
         if (user.isActive() && passwordEncoder.matches(request.password(), user.getPassword())) {
             return ResponseEntity.ok(UserDto.fromEntity(user));
         }
 
         throw new InvalidUserDataException("Invalid credentials");
+    }
+
+    @PostMapping("/validate-credentials-with-workspaces")
+    public ResponseEntity<UserWithWorkspacesDto> validateCredentialsWithWorkspaces(
+            @Valid @RequestBody CredentialsRequest request) {
+
+        UserWithWorkspacesDto result = authService.validateCredentialsWithWorkspaces(
+                request.email(), request.password());
+
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/validate-workspace-access")
+    public ResponseEntity<WorkspaceMembershipDto> validateWorkspaceAccess(
+            @RequestParam UUID userId,
+            @RequestParam UUID workspaceId) {
+
+        WorkspaceMembership membership = authService.validateUserWorkspaceAccess(userId, workspaceId);
+        return ResponseEntity.ok(WorkspaceMembershipDto.fromEntity(membership));
     }
 
     @PostMapping("/users")
