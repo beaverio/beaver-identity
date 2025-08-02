@@ -1,6 +1,7 @@
 package com.beaver.userservice.permission.entity;
 
 import com.beaver.userservice.common.entity.BaseEntity;
+import com.beaver.userservice.permission.enums.PermissionCategory;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
