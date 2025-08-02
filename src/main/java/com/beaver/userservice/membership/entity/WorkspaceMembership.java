@@ -1,6 +1,7 @@
 package com.beaver.userservice.membership.entity;
 
 import com.beaver.userservice.common.entity.BaseEntity;
+import com.beaver.userservice.membership.enums.MembershipStatus;
 import com.beaver.userservice.permission.entity.Permission;
 import com.beaver.userservice.workspace.entity.Workspace;
 import com.beaver.userservice.permission.entity.Role;
@@ -10,6 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -19,8 +21,11 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+@DynamicUpdate
 @Entity
-@Table(name = "workspace_memberships")
+@Table(name = "workspace_memberships", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "workspace_id"})
+})
 public class WorkspaceMembership extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,8 +47,7 @@ public class WorkspaceMembership extends BaseEntity {
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt = LocalDateTime.now();
 
-    // Get all permissions from the single role
-    public Set<String> getAllPermissions() {
+    public Set<String> getAllPermissionCodes() {
         return role.getPermissions().stream()
                 .map(Permission::getCode)
                 .collect(Collectors.toSet());

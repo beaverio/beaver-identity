@@ -1,6 +1,8 @@
 package com.beaver.userservice.workspace.entity;
 
 import com.beaver.userservice.common.entity.BaseEntity;
+import com.beaver.userservice.workspace.enums.PlanType;
+import com.beaver.userservice.workspace.enums.WorkspaceStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,8 +16,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+@DynamicUpdate
 @Entity
-@Table(name = "roles")
+@Table(name = "roles", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"workspace_id", "name"})
+})
 public class Role extends BaseEntity {
 
     @Column(name = "workspace_id", nullable = false)
