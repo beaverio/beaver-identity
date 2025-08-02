@@ -1,16 +1,15 @@
 package com.beaver.userservice.workspace;
 
-import com.beaver.userservice.common.exception.UserNotFoundException;
 import com.beaver.userservice.membership.MembershipService;
 import com.beaver.userservice.permission.IRoleRepository;
 import com.beaver.userservice.permission.RoleService;
 import com.beaver.userservice.permission.entity.Role;
-import com.beaver.userservice.user.IUserRepository;
 import com.beaver.userservice.user.UserService;
 import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.workspace.dto.CreateWorkspaceRequest;
 import com.beaver.userservice.workspace.enums.PlanType;
 import com.beaver.userservice.workspace.entity.Workspace;
+import com.beaver.userservice.workspace.enums.WorkspaceStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +33,7 @@ public class WorkspaceService {
 
         Workspace workspace = Workspace.builder()
                 .name(request.name())
+                .status(WorkspaceStatus.ACTIVE)
                 .plan(PlanType.STARTER)
                 .build();
 

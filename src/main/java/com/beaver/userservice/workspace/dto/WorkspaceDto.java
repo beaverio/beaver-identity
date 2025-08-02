@@ -18,7 +18,6 @@ public class WorkspaceDto extends BaseDto {
     private WorkspaceStatus status;
     private PlanType plan;
     private LocalDateTime trialEndsAt;
-    private String settings;
 
     public static WorkspaceDto fromEntity(Workspace workspace) {
         return WorkspaceDto.builder()
@@ -27,7 +26,6 @@ public class WorkspaceDto extends BaseDto {
                 .status(workspace.getStatus())
                 .plan(workspace.getPlan())
                 .trialEndsAt(workspace.getTrialEndsAt())
-                .settings(workspace.getSettings())
                 .createdAt(workspace.getCreatedAt())
                 .updatedAt(workspace.getUpdatedAt())
                 .build();

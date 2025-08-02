@@ -9,17 +9,21 @@ import com.beaver.userservice.internal.dto.CreateUserRequest;
 import com.beaver.userservice.internal.dto.CredentialsRequest;
 import com.beaver.userservice.internal.dto.UpdateEmail;
 import com.beaver.userservice.internal.dto.UpdatePassword;
+import com.beaver.userservice.membership.MembershipService;
 import com.beaver.userservice.membership.dto.WorkspaceMembershipDto;
 import com.beaver.userservice.membership.entity.WorkspaceMembership;
 import com.beaver.userservice.user.entity.User;
 import com.beaver.userservice.user.UserService;
 import com.beaver.userservice.user.dto.UserDto;
+import com.beaver.userservice.workspace.WorkspaceService;
+import com.beaver.userservice.workspace.dto.CreateWorkspaceRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,6 +34,8 @@ public class InternalUserController {
     private final UserService userService;
     private final AuthService authService;
     private final PasswordEncoder passwordEncoder;
+    private final WorkspaceService workspaceService;
+    private final MembershipService membershipService;
 
     @PostMapping("/validate-credentials")
     public ResponseEntity<UserDto> validateCredentials(@Valid @RequestBody CredentialsRequest request) {
@@ -69,6 +75,7 @@ public class InternalUserController {
         }
 
         try {
+            // Create the user first
             User user = User.builder()
                     .email(request.email())
                     .password(passwordEncoder.encode(request.password()))
@@ -76,7 +83,14 @@ public class InternalUserController {
                     .isActive(true)
                     .build();
 
-            userService.saveUser(user);
+            User savedUser = userService.saveUser(user);
+
+            // Create default workspace with format "User's Budget"
+            String workspaceName = savedUser.getName() + "'s Budget";
+            CreateWorkspaceRequest workspaceRequest = new CreateWorkspaceRequest(workspaceName);
+
+            workspaceService.createWorkspace(workspaceRequest, savedUser.getId());
+
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             throw new InvalidUserDataException("Failed to create user: " + e.getMessage());
@@ -105,5 +119,14 @@ public class InternalUserController {
     {
         userService.updatePassword(userId, updatePassword);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/users/{userId}/workspaces")
+    public ResponseEntity<UserWithWorkspacesDto> getUserWorkspaces(@PathVariable UUID userId) {
+        User user = userService.findById(userId);
+        List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(userId);
+
+        UserWithWorkspacesDto result = UserWithWorkspacesDto.fromUserAndMemberships(user, memberships);
+        return ResponseEntity.ok(result);
     }
 }

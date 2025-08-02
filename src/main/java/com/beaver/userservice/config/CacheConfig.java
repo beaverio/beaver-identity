@@ -27,6 +27,21 @@ public class CacheConfig {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.findAndRegisterModules();
 
+        // Configure Jackson to handle Hibernate proxies properly
+        objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        objectMapper.configure(com.fasterxml.jackson.databind.MapperFeature.USE_ANNOTATIONS, false);
+
+        // Add Hibernate module to handle lazy loading proxies
+        com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module hibernateModule =
+            new com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module();
+
+        // Configure to disable lazy loading during serialization/deserialization
+        hibernateModule.disable(com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module.Feature.USE_TRANSIENT_ANNOTATION);
+        hibernateModule.enable(com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module.Feature.FORCE_LAZY_LOADING);
+        hibernateModule.enable(com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module.Feature.SERIALIZE_IDENTIFIER_FOR_LAZY_NOT_LOADED_OBJECTS);
+
+        objectMapper.registerModule(hibernateModule);
+
         objectMapper.activateDefaultTyping(
             LaissezFaireSubTypeValidator.instance,
             ObjectMapper.DefaultTyping.NON_FINAL
@@ -43,23 +58,8 @@ public class CacheConfig {
 
         // Specific cache configurations for different entity types
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-
-        // Users cache - 30 minutes TTL (same as default, but explicit)
         cacheConfigurations.put("users", defaultConfig);
-
-        // Only add these if you need different TTL than the 30-minute default:
-
-        // Accounts cache - 15 minutes TTL (shorter because data changes more frequently)
-        // cacheConfigurations.put("accounts", defaultConfig.entryTtl(Duration.ofMinutes(15)));
-
-        // Products cache - 2 hours TTL (longer because product data is more stable)
-        // cacheConfigurations.put("products", defaultConfig.entryTtl(Duration.ofHours(2)));
-
-        // Sessions/tokens cache - 5 minutes TTL (security-sensitive, short-lived)
-        // cacheConfigurations.put("sessions", defaultConfig.entryTtl(Duration.ofMinutes(5)));
-
-        // Settings cache - 24 hours TTL (rarely changes)
-        // cacheConfigurations.put("settings", defaultConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigurations.put("memberships", defaultConfig);
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

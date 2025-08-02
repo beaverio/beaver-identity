@@ -34,7 +34,4 @@ public class Workspace extends BaseEntity {
 
     @Column(name = "trial_ends_at")
     private LocalDateTime trialEndsAt;
-
-    @Column(columnDefinition = "jsonb")
-    private String settings;
 }

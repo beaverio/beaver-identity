@@ -8,7 +8,6 @@ import com.beaver.userservice.workspace.entity.Workspace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,12 +25,10 @@ public class MembershipService {
 
     private final IMembershipRepository membershipRepository;
 
-    @Cacheable(value = "memberships", key = "'user:' + #userId")
     public List<WorkspaceMembership> findActiveByUserId(UUID userId) {
         return membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
     }
 
-    @Cacheable(value = "memberships", key = "'user:' + #userId + ':workspace:' + #workspaceId")
     public Optional<WorkspaceMembership> findByUserIdAndWorkspaceId(UUID userId, UUID workspaceId) {
         return membershipRepository.findByUserIdAndWorkspaceIdAndStatus(
                 userId, workspaceId, MembershipStatus.ACTIVE);
@@ -64,11 +61,6 @@ public class MembershipService {
         evictMembershipCache(user.getId(), workspace.getId());
 
         return saved;
-    }
-
-    @CacheEvict(value = "memberships", key = "'user:' + #userId")
-    public void evictUserMembershipsCache(UUID userId) {
-        log.debug("Evicting memberships cache for user: {}", userId);
     }
 
     @CacheEvict(value = "memberships", key = "'user:' + #userId + ':workspace:' + #workspaceId")
