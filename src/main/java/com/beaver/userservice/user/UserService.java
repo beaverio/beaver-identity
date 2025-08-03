@@ -128,8 +128,7 @@ public class UserService {
                 .email(email)
                 .password(passwordEncoder.encode(password))
                 .name(name)
-                .
-                .active(true)
+                .isActive(true)
                 .build();
 
         return userRepository.save(user);

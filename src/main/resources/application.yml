@@ -1,10 +1,5 @@
 server:
   port: ${SERVER_PORT:8081}
-  servlet:
-    context-path: /users
-
-gateway:
-  secret: ${GATEWAY_SECRET}
 
 spring:
   config:
@@ -39,3 +34,12 @@ spring:
       enabled: true
     livereload:
       enabled: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  accessTokenValidity: ${JWT_ACCESS_VALIDITY}
+  refreshTokenValidity: ${JWT_REFRESH_VALIDITY}
+  authDisabled: false
+
+gateway:
+  secret: ${GATEWAY_SECRET}
