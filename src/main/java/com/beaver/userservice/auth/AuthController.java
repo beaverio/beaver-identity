@@ -1,7 +1,10 @@
 package com.beaver.userservice.auth;
 
 import com.beaver.auth.jwt.JwtService;
+import com.beaver.auth.cookie.AuthCookieService;
+import com.beaver.auth.cookie.ServletTokenExtractor;
 import com.beaver.auth.exceptions.AuthenticationFailedException;
+import com.beaver.auth.exceptions.InvalidRefreshTokenException;
 import com.beaver.userservice.auth.dto.AuthResponse;
 import com.beaver.userservice.auth.dto.LoginRequest;
 import com.beaver.userservice.auth.dto.SignupRequest;
@@ -12,9 +15,11 @@ import com.beaver.userservice.workspace.entity.Workspace;
 import com.beaver.userservice.membership.MembershipService;
 import com.beaver.userservice.membership.entity.WorkspaceMembership;
 import com.beaver.userservice.permission.entity.Permission;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +40,8 @@ public class AuthController {
     private final WorkspaceService workspaceService;
     private final MembershipService membershipService;
     private final JwtService jwtService;
+    private final AuthCookieService cookieService;
+    private final ServletTokenExtractor tokenExtractor;
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
@@ -46,17 +53,16 @@ public class AuthController {
 
         User user = userOpt.get();
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new AuthenticationFailedException("Email or password incorrect");
+            throw new AuthenticationFailedException("Invalid credentials");
         }
 
-        // TODO: Select a default/primary workspace, critical
         List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
         if (memberships.isEmpty()) {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        WorkspaceMembership membership = memberships.getFirst();
-        Set<String> permissions = membership.getRole().getPermissions().stream()
+        WorkspaceMembership primaryMembership = memberships.getFirst();
+        Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
             .map(Permission::getCode)
             .collect(Collectors.toSet());
 
@@ -64,27 +70,28 @@ public class AuthController {
             user.getId().toString(),
             user.getEmail(),
             user.getName(),
-            membership.getWorkspace().getId().toString(),
+            primaryMembership.getWorkspace().getId().toString(),
             permissions
         );
 
         String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
 
-        return ResponseEntity.ok(AuthResponse.builder()
-            .success(true)
-            .message("Login successful")
-            .accessToken(accessToken)
-            .refreshToken(refreshToken)
-            .user(AuthResponse.UserInfo.builder()
-                .id(user.getId().toString())
-                .email(user.getEmail())
-                .name(user.getName())
-                .build())
-            .workspace(AuthResponse.WorkspaceInfo.builder()
-                .id(membership.getWorkspace().getId().toString())
-                .name(membership.getWorkspace().getName())
-                .build())
-            .build());
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(accessToken).toString())
+            .header(HttpHeaders.SET_COOKIE, cookieService.createRefreshTokenCookie(refreshToken).toString())
+            .body(AuthResponse.builder()
+                .success(true)
+                .message("Login successful")
+                .user(AuthResponse.UserInfo.builder()
+                    .id(user.getId().toString())
+                    .email(user.getEmail())
+                    .name(user.getName())
+                    .build())
+                .workspace(AuthResponse.WorkspaceInfo.builder()
+                    .id(primaryMembership.getWorkspace().getId().toString())
+                    .name(primaryMembership.getWorkspace().getName())
+                    .build())
+                .build());
     }
 
     @PostMapping("/signup")
@@ -107,7 +114,6 @@ public class AuthController {
             .map(Permission::getCode)
             .collect(Collectors.toSet());
 
-        // Generate JWT tokens
         String accessToken = jwtService.generateAccessToken(
             user.getId().toString(),
             user.getEmail(),
@@ -118,26 +124,30 @@ public class AuthController {
 
         String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
 
-        return ResponseEntity.ok(AuthResponse.builder()
-            .success(true)
-            .message("Signup successful")
-            .accessToken(accessToken)
-            .refreshToken(refreshToken)
-            .user(AuthResponse.UserInfo.builder()
-                .id(user.getId().toString())
-                .email(user.getEmail())
-                .name(user.getName())
-                .build())
-            .workspace(AuthResponse.WorkspaceInfo.builder()
-                .id(workspace.getId().toString())
-                .name(workspace.getName())
-                .build())
-            .build());
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(accessToken).toString())
+            .header(HttpHeaders.SET_COOKIE, cookieService.createRefreshTokenCookie(refreshToken).toString())
+            .body(AuthResponse.builder()
+                .success(true)
+                .message("Signup successful")
+                .user(AuthResponse.UserInfo.builder()
+                    .id(user.getId().toString())
+                    .email(user.getEmail())
+                    .name(user.getName())
+                    .build())
+                .workspace(AuthResponse.WorkspaceInfo.builder()
+                    .id(workspace.getId().toString())
+                    .name(workspace.getName())
+                    .build())
+                .build());
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestHeader("Authorization") String authHeader) {
-        String refreshToken = extractTokenFromHeader(authHeader);
+    public ResponseEntity<AuthResponse> refresh(HttpServletRequest request) {
+        String refreshToken = tokenExtractor.extractRefreshToken(request);
+        if (refreshToken == null) {
+            throw new InvalidRefreshTokenException("Refresh token cookie not found");
+        }
 
         jwtService.validateRefreshToken(refreshToken).block();
         String userId = jwtService.extractUserIdFromToken(refreshToken).block();
@@ -145,7 +155,6 @@ public class AuthController {
         assert userId != null;
         User user = userService.findById(UUID.fromString(userId));
 
-        // TODO: Refresh for workspace in access_token/refresh_token, critical
         List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
         if (memberships.isEmpty()) {
             throw new AuthenticationFailedException("No workspace access");
@@ -164,18 +173,22 @@ public class AuthController {
             permissions
         );
 
-        return ResponseEntity.ok(AuthResponse.builder()
-            .success(true)
-            .message("Token refreshed successfully")
-            .accessToken(newAccessToken)
-            .refreshToken(refreshToken)
-            .build());
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(newAccessToken).toString())
+            .body(AuthResponse.builder()
+                .success(true)
+                .message("Token refreshed successfully")
+                .build());
     }
 
-    private String extractTokenFromHeader(String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-        throw new IllegalArgumentException("Invalid authorization header");
+    @PostMapping("/logout")
+    public ResponseEntity<AuthResponse> logout() {
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, cookieService.clearAccessTokenCookie().toString())
+            .header(HttpHeaders.SET_COOKIE, cookieService.clearRefreshTokenCookie().toString())
+            .body(AuthResponse.builder()
+                .success(true)
+                .message("Logout successful")
+                .build());
     }
 }

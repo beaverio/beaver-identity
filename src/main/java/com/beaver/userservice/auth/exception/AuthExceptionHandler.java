@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @Slf4j
 public class AuthExceptionHandler {
-
+    
     @ExceptionHandler(InvalidRefreshTokenException.class)
     public ResponseEntity<AuthResponse> handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
         log.warn("Invalid refresh token: {}", ex.getMessage());
@@ -24,7 +24,7 @@ public class AuthExceptionHandler {
                 .build()
         );
     }
-
+    
     @ExceptionHandler(AuthenticationFailedException.class)
     public ResponseEntity<AuthResponse> handleAuthenticationFailed(AuthenticationFailedException ex) {
         log.warn("Authentication failed: {}", ex.getMessage());
@@ -35,7 +35,7 @@ public class AuthExceptionHandler {
                 .build()
         );
     }
-
+    
     @ExceptionHandler(JwtTokenMalformedException.class)
     public ResponseEntity<AuthResponse> handleMalformedToken(JwtTokenMalformedException ex) {
         log.warn("Malformed JWT token: {}", ex.getMessage());
@@ -46,7 +46,7 @@ public class AuthExceptionHandler {
                 .build()
         );
     }
-
+    
     @ExceptionHandler(JwtTokenMissingException.class)
     public ResponseEntity<AuthResponse> handleMissingToken(JwtTokenMissingException ex) {
         log.warn("Missing JWT token: {}", ex.getMessage());
