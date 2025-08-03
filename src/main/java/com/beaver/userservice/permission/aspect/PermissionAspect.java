@@ -1,5 +1,6 @@
 package com.beaver.userservice.permission.aspect;
 
+import com.beaver.userservice.common.exception.AccessDeniedException;
 import com.beaver.userservice.permission.PermissionService;
 import com.beaver.userservice.permission.annotation.RequiresPermission;
 import com.beaver.userservice.permission.enums.Permission;
@@ -9,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -58,7 +58,7 @@ public class PermissionAspect {
                     .collect(Collectors.joining(", "));
             log.warn("Access denied for user {} in workspace {}. Required permissions: {}",
                     userId, workspaceId, permissionNames);
-            throw new AccessDeniedException("Insufficient permissions: " + permissionNames);
+            throw new AccessDeniedException("Insufficient permissions");
         }
 
         return joinPoint.proceed();

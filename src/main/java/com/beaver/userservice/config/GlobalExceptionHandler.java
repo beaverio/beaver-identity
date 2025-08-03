@@ -1,6 +1,7 @@
 package com.beaver.userservice.config;
 
 import com.beaver.userservice.common.dto.ErrorResponse;
+import com.beaver.userservice.common.exception.AccessDeniedException;
 import com.beaver.userservice.common.exception.InvalidUserDataException;
 import com.beaver.userservice.common.exception.UserAlreadyExistsException;
 import com.beaver.userservice.common.exception.UserNotFoundException;
@@ -74,6 +75,19 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex, HttpServletRequest request) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "Access Denied",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

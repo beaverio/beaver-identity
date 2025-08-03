@@ -9,7 +9,7 @@ import com.beaver.userservice.workspace.entity.Workspace;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
+import com.beaver.userservice.common.exception.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;

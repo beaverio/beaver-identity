@@ -1,6 +1,13 @@
 package com.beaver.userservice.permission.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Getter
 public enum Permission {
+    DENY_ALL("deny:read"),
+
     // Financial permissions
     TRANSACTION_READ("transaction:read"),
     TRANSACTION_WRITE("transaction:write"),
@@ -14,15 +21,6 @@ public enum Permission {
 
     private final String value;
 
-    Permission(String value) {
-        this.value = value;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    // Optional: toString override
     @Override
     public String toString() {
         return value;
