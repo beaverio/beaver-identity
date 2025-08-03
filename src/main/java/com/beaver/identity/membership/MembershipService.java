@@ -1,0 +1,58 @@
+package com.beaver.identity.membership;
+
+import com.beaver.identity.membership.enums.MembershipStatus;
+import com.beaver.identity.membership.entity.WorkspaceMembership;
+import com.beaver.identity.permission.entity.Role;
+import com.beaver.identity.user.entity.User;
+import com.beaver.identity.workspace.entity.Workspace;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+@Slf4j
+public class MembershipService {
+
+    private final IMembershipRepository membershipRepository;
+
+    public List<WorkspaceMembership> findActiveByUserId(UUID userId) {
+        return membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
+    }
+
+    public Optional<WorkspaceMembership> findByUserIdAndWorkspaceId(UUID userId, UUID workspaceId) {
+        return membershipRepository.findByUserIdAndWorkspaceIdAndStatus(
+                userId, workspaceId, MembershipStatus.ACTIVE);
+    }
+
+    public WorkspaceMembership addUserToWorkspace(User user, Workspace workspace, Role role) {
+        log.info("Adding user {} to workspace {} with role {}", user.getId(), workspace.getId(), role.getName());
+
+        WorkspaceMembership membership = WorkspaceMembership.builder()
+                .user(user)
+                .workspace(workspace)
+                .role(role)
+                .status(MembershipStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+        WorkspaceMembership saved = membershipRepository.save(membership);
+        evictMembershipCache(user.getId(), workspace.getId());
+        
+        return saved;
+    }
+
+    @CacheEvict(value = "memberships", key = "'user:' + #userId + ':workspace:' + #workspaceId")
+    public void evictMembershipCache(UUID userId, UUID workspaceId) {
+        log.debug("Evicting membership cache for user {} and workspace {}", userId, workspaceId);
+    }
+}

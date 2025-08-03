@@ -5,7 +5,7 @@ spring:
   config:
     import: optional:file:.env[.properties]
   application:
-    name: user-service-${ENV:local}
+    name: beaver-identity-${ENV:local}
 
   datasource:
     url: ${DATABASE_URL}

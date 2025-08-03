@@ -13,9 +13,9 @@
 
     <!-- Project Information -->
     <groupId>com.beaver</groupId>
-    <artifactId>user-service</artifactId>
+    <artifactId>beaver-identity</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>user-service</name>
+    <name>beaver-identity</name>
     <description>User management service for Beaver platform</description>
 
     <!-- Properties -->
