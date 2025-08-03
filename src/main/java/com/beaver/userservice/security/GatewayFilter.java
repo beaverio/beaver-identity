@@ -35,26 +35,13 @@ public class GatewayFilter implements Filter {
             return;
         }
 
-        String receivedSecret = httpRequest.getHeader("X-Service-Secret");
-        String sourceHeader = httpRequest.getHeader("X-Source");
-
-        // Validate X-Service-Secret header (shared secret)
-        if (!gatewaySecret.equals(receivedSecret)) {
+        if (!gatewaySecret.equals(httpRequest.getHeader("X-Gateway-Secret"))) {
             httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
             httpResponse.setContentType("application/json");
             httpResponse.getWriter().write("{\"error\":\"Forbidden: Invalid service secret\"}");
             return;
         }
 
-        // Validate X-Source header (must come from gateway)
-        if (!"gateway".equals(sourceHeader)) {
-            httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            httpResponse.setContentType("application/json");
-            httpResponse.getWriter().write("{\"error\":\"Forbidden: Invalid request source\"}");
-            return;
-        }
-
-        // All validations passed, continue with the request
         chain.doFilter(request, response);
     }
 }

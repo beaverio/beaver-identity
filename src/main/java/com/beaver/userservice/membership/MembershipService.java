@@ -34,16 +34,6 @@ public class MembershipService {
                 userId, workspaceId, MembershipStatus.ACTIVE);
     }
 
-    public Set<String> getUserPermissions(UUID userId, UUID workspaceId) {
-        return findByUserIdAndWorkspaceId(userId, workspaceId)
-                .map(WorkspaceMembership::getAllPermissionCodes)
-                .orElse(Set.of());
-    }
-
-    public List<WorkspaceMembership> findMembersByWorkspaceId(UUID workspaceId) {
-        return membershipRepository.findByWorkspaceIdAndStatus(workspaceId, MembershipStatus.ACTIVE);
-    }
-
     public WorkspaceMembership addUserToWorkspace(User user, Workspace workspace, Role role) {
         log.info("Adding user {} to workspace {} with role {}", user.getId(), workspace.getId(), role.getName());
 
@@ -56,10 +46,8 @@ public class MembershipService {
                 .build();
 
         WorkspaceMembership saved = membershipRepository.save(membership);
-
-        // Clear cache for this user
         evictMembershipCache(user.getId(), workspace.getId());
-
+        
         return saved;
     }
 

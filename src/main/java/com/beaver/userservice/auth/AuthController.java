@@ -39,153 +39,100 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        try {
-            // Validate user credentials
-            Optional<User> userOpt = userService.findByEmail(request.email());
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(401).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("Email not found")
-                        .build()
-                );
-            }
-
-            User user = userOpt.get();
-            if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-                return ResponseEntity.status(401).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("Invalid credentials")
-                        .build()
-                );
-            }
-
-            // Get user's workspace memberships
-            List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
-            if (memberships.isEmpty()) {
-                return ResponseEntity.status(401).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("User has no active workspaces")
-                        .build()
-                );
-            }
-
-            // TODO: Allow User to set a default workspace
-            WorkspaceMembership primaryMembership = memberships.get(0);
-            Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
-                .map(Permission::getCode)
-                .collect(Collectors.toSet());
-
-            // Generate JWT tokens
-            String accessToken = jwtService.generateAccessToken(
-                user.getId().toString(),
-                user.getEmail(),
-                user.getName(),
-                primaryMembership.getWorkspace().getId().toString(),
-                permissions
-            );
-
-            String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
-
-            return ResponseEntity.ok(AuthResponse.builder()
-                .success(true)
-                .message("Login successful")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .user(AuthResponse.UserInfo.builder()
-                    .id(user.getId().toString())
-                    .email(user.getEmail())
-                    .name(user.getName())
-                    .build())
-                .workspace(AuthResponse.WorkspaceInfo.builder()
-                    .id(primaryMembership.getWorkspace().getId().toString())
-                    .name(primaryMembership.getWorkspace().getName())
-                    .build())
-                .build());
-
-        } catch (Exception e) {
-            log.error("Login failed for email: {}", request.email(), e);
-            return ResponseEntity.status(401).body(
-                AuthResponse.builder()
-                    .success(false)
-                    .message("Authentication failed")
-                    .build()
-            );
+        Optional<User> userOpt = userService.findByEmail(request.email());
+        if (userOpt.isEmpty()) {
+            throw new AuthenticationFailedException("Email not found");
         }
+
+        User user = userOpt.get();
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new AuthenticationFailedException("Email or password incorrect");
+        }
+
+        // TODO: Select a default/primary workspace, critical
+        List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
+        if (memberships.isEmpty()) {
+            throw new AuthenticationFailedException("User has no active workspaces");
+        }
+
+        WorkspaceMembership membership = memberships.getFirst();
+        Set<String> permissions = membership.getRole().getPermissions().stream()
+            .map(Permission::getCode)
+            .collect(Collectors.toSet());
+
+        String accessToken = jwtService.generateAccessToken(
+            user.getId().toString(),
+            user.getEmail(),
+            user.getName(),
+            membership.getWorkspace().getId().toString(),
+            permissions
+        );
+
+        String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
+
+        return ResponseEntity.ok(AuthResponse.builder()
+            .success(true)
+            .message("Login successful")
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .user(AuthResponse.UserInfo.builder()
+                .id(user.getId().toString())
+                .email(user.getEmail())
+                .name(user.getName())
+                .build())
+            .workspace(AuthResponse.WorkspaceInfo.builder()
+                .id(membership.getWorkspace().getId().toString())
+                .name(membership.getWorkspace().getName())
+                .build())
+            .build());
     }
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
-        try {
-            // Check if user already exists
-            Optional<User> existingUser = userService.findByEmail(request.email());
-            if (existingUser.isPresent()) {
-                return ResponseEntity.status(409).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("Account already exists with that email, do you want to login?")
-                        .build()
-                );
-            }
-
-            // Create user and default workspace
-            User user = userService.createUser(request.email(), request.password(), request.name());
-            Workspace workspace = workspaceService.createDefaultWorkspace(user);
-
-            // Get the membership that was created
-            Optional<WorkspaceMembership> membershipOpt = membershipService.findByUserIdAndWorkspaceId(user.getId(), workspace.getId());
-            if (membershipOpt.isEmpty()) {
-                return ResponseEntity.status(500).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("Failed to find workspace membership after creation")
-                        .build()
-                );
-            }
-
-            WorkspaceMembership membership = membershipOpt.get();
-            Set<String> permissions = membership.getRole().getPermissions().stream()
-                .map(Permission::getCode)
-                .collect(Collectors.toSet());
-
-            // Generate JWT tokens
-            String accessToken = jwtService.generateAccessToken(
-                user.getId().toString(),
-                user.getEmail(),
-                user.getName(),
-                workspace.getId().toString(),
-                permissions
-            );
-
-            String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
-
-            return ResponseEntity.ok(AuthResponse.builder()
-                .success(true)
-                .message("Signup successful")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .user(AuthResponse.UserInfo.builder()
-                    .id(user.getId().toString())
-                    .email(user.getEmail())
-                    .name(user.getName())
-                    .build())
-                .workspace(AuthResponse.WorkspaceInfo.builder()
-                    .id(workspace.getId().toString())
-                    .name(workspace.getName())
-                    .build())
-                .build());
-
-        } catch (Exception e) {
-            log.error("Signup failed for email: {}", request.email(), e);
-            return ResponseEntity.status(400).body(
-                AuthResponse.builder()
-                    .success(false)
-                    .message("Signup failed: " + e.getMessage())
-                    .build()
-            );
+        Optional<User> existingUser = userService.findByEmail(request.email());
+        if (existingUser.isPresent()) {
+            throw new AuthenticationFailedException("Account already exists with that email, do you want to login?");
         }
+
+        User user = userService.createUser(request.email(), request.password(), request.name());
+        Workspace workspace = workspaceService.createDefaultWorkspace(user);
+
+        Optional<WorkspaceMembership> membershipOpt = membershipService.findByUserIdAndWorkspaceId(user.getId(), workspace.getId());
+        if (membershipOpt.isEmpty()) {
+            throw new AuthenticationFailedException("Failed to find workspace membership after creation");
+        }
+
+        WorkspaceMembership membership = membershipOpt.get();
+        Set<String> permissions = membership.getRole().getPermissions().stream()
+            .map(Permission::getCode)
+            .collect(Collectors.toSet());
+
+        // Generate JWT tokens
+        String accessToken = jwtService.generateAccessToken(
+            user.getId().toString(),
+            user.getEmail(),
+            user.getName(),
+            workspace.getId().toString(),
+            permissions
+        );
+
+        String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
+
+        return ResponseEntity.ok(AuthResponse.builder()
+            .success(true)
+            .message("Signup successful")
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .user(AuthResponse.UserInfo.builder()
+                .id(user.getId().toString())
+                .email(user.getEmail())
+                .name(user.getName())
+                .build())
+            .workspace(AuthResponse.WorkspaceInfo.builder()
+                .id(workspace.getId().toString())
+                .name(workspace.getName())
+                .build())
+            .build());
     }
 
     @PostMapping("/refresh")
