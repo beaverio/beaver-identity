@@ -2,7 +2,6 @@ package com.beaver.userservice.auth;
 
 import com.beaver.auth.jwt.JwtService;
 import com.beaver.auth.cookie.AuthCookieService;
-import com.beaver.auth.cookie.ServletTokenExtractor;
 import com.beaver.auth.exceptions.AuthenticationFailedException;
 import com.beaver.auth.exceptions.InvalidRefreshTokenException;
 import com.beaver.userservice.auth.dto.AuthResponse;
@@ -41,7 +40,6 @@ public class AuthController {
     private final MembershipService membershipService;
     private final JwtService jwtService;
     private final AuthCookieService cookieService;
-    private final ServletTokenExtractor tokenExtractor;
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
@@ -132,7 +130,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(HttpServletRequest request) {
-        String refreshToken = tokenExtractor.extractRefreshToken(request);
+        String refreshToken = cookieService.extractRefreshToken(request);
         if (refreshToken == null) {
             throw new InvalidRefreshTokenException("Refresh token cookie not found");
         }
@@ -145,7 +143,7 @@ public class AuthController {
 
         List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
         if (memberships.isEmpty()) {
-            throw new AuthenticationFailedException("No workspace access");
+            throw new AuthenticationFailedException("User has no active workspaces");
         }
 
         WorkspaceMembership primaryMembership = memberships.getFirst();
