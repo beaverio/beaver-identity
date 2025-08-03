@@ -53,7 +53,7 @@ public class AuthController {
 
         User user = userOpt.get();
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new AuthenticationFailedException("Invalid credentials");
+            throw new AuthenticationFailedException("Email or password incorrect");
         }
 
         List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
@@ -80,25 +80,19 @@ public class AuthController {
             .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(accessToken).toString())
             .header(HttpHeaders.SET_COOKIE, cookieService.createRefreshTokenCookie(refreshToken).toString())
             .body(AuthResponse.builder()
-                .success(true)
-                .message("Login successful")
-                .user(AuthResponse.UserInfo.builder()
-                    .id(user.getId().toString())
-                    .email(user.getEmail())
-                    .name(user.getName())
-                    .build())
-                .workspace(AuthResponse.WorkspaceInfo.builder()
-                    .id(primaryMembership.getWorkspace().getId().toString())
-                    .name(primaryMembership.getWorkspace().getName())
-                    .build())
-                .build());
+                    .success(true)
+                    .message("Login successful")
+                    .userId(user.getId())
+                    .workspaceId(primaryMembership.getWorkspace().getId())
+                    .build()
+            );
     }
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         Optional<User> existingUser = userService.findByEmail(request.email());
         if (existingUser.isPresent()) {
-            throw new AuthenticationFailedException("Account already exists with that email, do you want to login?");
+            throw new AuthenticationFailedException("An account already exists with that email, do you want to login?");
         }
 
         User user = userService.createUser(request.email(), request.password(), request.name());
@@ -128,18 +122,12 @@ public class AuthController {
             .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(accessToken).toString())
             .header(HttpHeaders.SET_COOKIE, cookieService.createRefreshTokenCookie(refreshToken).toString())
             .body(AuthResponse.builder()
-                .success(true)
-                .message("Signup successful")
-                .user(AuthResponse.UserInfo.builder()
-                    .id(user.getId().toString())
-                    .email(user.getEmail())
-                    .name(user.getName())
-                    .build())
-                .workspace(AuthResponse.WorkspaceInfo.builder()
-                    .id(workspace.getId().toString())
-                    .name(workspace.getName())
-                    .build())
-                .build());
+                    .success(true)
+                    .message("Signup successful")
+                    .userId(user.getId())
+                    .workspaceId(membership.getWorkspace().getId())
+                    .build()
+            );
     }
 
     @PostMapping("/refresh")
@@ -176,9 +164,12 @@ public class AuthController {
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(newAccessToken).toString())
             .body(AuthResponse.builder()
-                .success(true)
-                .message("Token refreshed successfully")
-                .build());
+                    .success(true)
+                    .message("Token refresh successful")
+                    .userId(user.getId())
+                    .workspaceId(primaryMembership.getWorkspace().getId())
+                    .build()
+            );
     }
 
     @PostMapping("/logout")
