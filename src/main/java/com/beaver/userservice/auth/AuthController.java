@@ -44,7 +44,7 @@ public class AuthController {
                 return ResponseEntity.status(401).body(
                     AuthResponse.builder()
                         .success(false)
-                        .message("Invalid credentials")
+                        .message("Email not found")
                         .build()
                 );
             }
@@ -65,13 +65,13 @@ public class AuthController {
                 return ResponseEntity.status(401).body(
                     AuthResponse.builder()
                         .success(false)
-                        .message("No workspace access")
+                        .message("User has no active workspaces")
                         .build()
                 );
             }
 
-            // Select primary workspace (first active one)
-            WorkspaceMembership primaryMembership = memberships.get(0);
+            // TODO: Allow User to set a default workspace
+            WorkspaceMembership primaryMembership = memberships.getFirst();
             Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
                 .map(Permission::getCode)
                 .collect(Collectors.toSet());
@@ -123,7 +123,7 @@ public class AuthController {
                 return ResponseEntity.status(409).body(
                     AuthResponse.builder()
                         .success(false)
-                        .message("User already exists")
+                        .message("Account already exists with that email, do you want to login?")
                         .build()
                 );
             }
@@ -138,7 +138,7 @@ public class AuthController {
                 return ResponseEntity.status(500).body(
                     AuthResponse.builder()
                         .success(false)
-                        .message("Failed to create workspace membership")
+                        .message("Failed to find workspace membership after creation")
                         .build()
                 );
             }
@@ -208,7 +208,7 @@ public class AuthController {
                 return ResponseEntity.status(401).body(
                     AuthResponse.builder()
                         .success(false)
-                        .message("Invalid refresh token")
+                        .message("Invalid refresh token. Refresh token does not include `userId`")
                         .build()
                 );
             }
@@ -226,7 +226,7 @@ public class AuthController {
                 );
             }
 
-            WorkspaceMembership primaryMembership = memberships.get(0);
+            WorkspaceMembership primaryMembership = memberships.getFirst();
             Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
                 .map(Permission::getCode)
                 .collect(Collectors.toSet());

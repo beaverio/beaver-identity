@@ -1,5 +1,6 @@
 package com.beaver.userservice.workspace;
 
+import com.beaver.auth.exceptions.AccessDeniedException;
 import com.beaver.auth.permissions.RequiresPermission;
 import com.beaver.auth.permissions.Permission;
 import com.beaver.userservice.workspace.dto.CreateWorkspaceRequest;
@@ -9,7 +10,6 @@ import com.beaver.userservice.workspace.entity.Workspace;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import com.beaver.userservice.common.exception.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;

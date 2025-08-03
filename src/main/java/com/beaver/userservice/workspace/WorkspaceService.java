@@ -69,7 +69,7 @@ public class WorkspaceService {
         workspace = workspaceRepository.save(workspace);
         log.info("Created default workspace with ID: {}", workspace.getId());
 
-        // Create default roles (Owner and Viewer) for this workspace
+        // Create default role (Owner) for this workspace
         roleService.createDefaultRoles(workspace.getId());
 
         // Add user as owner
