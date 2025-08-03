@@ -14,10 +14,12 @@ CREATE TABLE permissions (
 -- Insert simplified permissions
 INSERT INTO permissions (code, name, description, resource, action, category)
 VALUES
+      ('deny:all', 'Deny All', 'Deny all operations', 'deny', 'all', 'ADMINISTRATION'),
       ('transaction:read', 'Read Transactions', 'View transaction history and details', 'transaction', 'read', 'FINANCIAL'),
       ('transaction:write', 'Write Transactions', 'Create and edit transactions', 'transaction', 'write', 'FINANCIAL'),
       ('budget:read', 'Read Budgets', 'View budget information', 'budget', 'read', 'FINANCIAL'),
       ('budget:write', 'Write Budgets', 'Create and edit budgets', 'budget', 'write', 'FINANCIAL'),
       ('report:read', 'Read Reports', 'View reports and analytics', 'report', 'read', 'REPORTING'),
-      ('workspace:settings', 'Workspace Settings', 'Modify workspace settings', 'workspace', 'settings', 'ADMINISTRATION'),
-      ('workspace:members', 'Manage Members', 'Add and remove workspace members', 'workspace', 'members', 'ADMINISTRATION');
+      ('workspace:owner', 'Owner Workspace', 'Owner of workspaces information', 'workspace', 'owner', 'ADMINISTRATION'),
+      ('workspace:read', 'Read Workspace', 'Read workspaces information', 'workspace', 'read', 'ADMINISTRATION'),
+      ('workspace:write', 'Write Workspace', 'Modify workspaces information', 'workspace', 'write', 'ADMINISTRATION');

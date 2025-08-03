@@ -1,6 +1,5 @@
 package com.beaver.identity.workspace;
 
-import com.beaver.auth.exceptions.AccessDeniedException;
 import com.beaver.auth.permissions.RequiresPermission;
 import com.beaver.auth.permissions.Permission;
 import com.beaver.identity.workspace.dto.CreateWorkspaceRequest;
@@ -30,24 +29,20 @@ public class WorkspaceController {
         return ResponseEntity.ok(WorkspaceDto.fromEntity(workspace));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<WorkspaceDto> getWorkspace(@PathVariable UUID id) {
-        Workspace workspace = workspaceService.findById(id);
+    @GetMapping("/current")
+    @RequiresPermission(Permission.WORKSPACE_READ)
+    public ResponseEntity<WorkspaceDto> getWorkspace(
+            @RequestHeader("X-Workspace-Id") UUID workspaceId) {
+        Workspace workspace = workspaceService.findById(workspaceId);
         return ResponseEntity.ok(WorkspaceDto.fromEntity(workspace));
     }
 
-    @PostMapping("/{id}/members/invite")
-    @RequiresPermission(Permission.WORKSPACE_MEMBERS)
+    @PostMapping("/current/members/invite")
+    @RequiresPermission(Permission.WORKSPACE_OWNER)
     public ResponseEntity<String> inviteMember(
-            @PathVariable UUID id,
             @RequestHeader("X-User-Id") UUID inviterId,
-            @RequestHeader("X-Workspace-Id") UUID currentWorkspaceId,
+            @RequestHeader("X-Workspace-Id") UUID workspaceId,
             @Valid @RequestBody InviteMemberRequest request) {
-
-        // Verify the workspace IDs match (security check)
-        if (!id.equals(currentWorkspaceId)) {
-            throw new AccessDeniedException("Workspace ID mismatch");
-        }
 
         // TODO: Implementation for inviting members
 
