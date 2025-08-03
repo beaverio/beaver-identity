@@ -101,7 +101,19 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-            <version>3.5.11</version>
+        </dependency>
+
+        <!-- Beaver Auth Library -->
+        <dependency>
+            <groupId>com.beaver</groupId>
+            <artifactId>beaver-auth</artifactId>
+            <version>LATEST</version>
+        </dependency>
+
+        <!-- Redis for caching -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
         </dependency>
 
         <!-- Jackson -->
@@ -127,13 +139,6 @@
             <artifactId>mapstruct-processor</artifactId>
             <version>${mapstruct.version}</version>
             <scope>provided</scope>
-        </dependency>
-
-        <!-- Beaver Shared Libraries -->
-        <dependency>
-            <groupId>com.beaver</groupId>
-            <artifactId>beaver-auth</artifactId>
-            <version>LATEST</version>
         </dependency>
 
         <!-- Development -->
