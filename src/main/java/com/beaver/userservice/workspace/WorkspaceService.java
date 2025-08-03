@@ -1,7 +1,6 @@
 package com.beaver.userservice.workspace;
 
 import com.beaver.userservice.membership.MembershipService;
-import com.beaver.userservice.permission.IRoleRepository;
 import com.beaver.userservice.permission.RoleService;
 import com.beaver.userservice.permission.entity.Role;
 import com.beaver.userservice.user.UserService;
@@ -55,5 +54,29 @@ public class WorkspaceService {
     public Workspace findById(UUID workspaceId) {
         return workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new IllegalArgumentException("Workspace not found: " + workspaceId));
+    }
+
+    public Workspace createDefaultWorkspace(User user) {
+        log.info("Creating default workspace for user: {}", user.getId());
+
+        String workspaceName = user.getName() + "'s Workspace";
+        Workspace workspace = Workspace.builder()
+                .name(workspaceName)
+                .status(WorkspaceStatus.ACTIVE)
+                .plan(PlanType.STARTER)
+                .build();
+
+        workspace = workspaceRepository.save(workspace);
+        log.info("Created default workspace with ID: {}", workspace.getId());
+
+        // Create default roles (Owner and Viewer) for this workspace
+        roleService.createDefaultRoles(workspace.getId());
+
+        // Add user as owner
+        Role ownerRole = roleService.findByWorkspaceIdAndName(workspace.getId(), "Owner");
+        membershipService.addUserToWorkspace(user, workspace, ownerRole);
+        log.info("Added user {} as owner of default workspace {}", user.getId(), workspace.getId());
+
+        return workspace;
     }
 }

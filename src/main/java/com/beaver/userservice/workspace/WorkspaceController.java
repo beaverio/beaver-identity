@@ -1,7 +1,7 @@
 package com.beaver.userservice.workspace;
 
-import com.beaver.auth.RequiresPermission;
-import com.beaver.auth.Permission;
+import com.beaver.auth.permissions.RequiresPermission;
+import com.beaver.auth.permissions.Permission;
 import com.beaver.userservice.workspace.dto.CreateWorkspaceRequest;
 import com.beaver.userservice.workspace.dto.InviteMemberRequest;
 import com.beaver.userservice.workspace.dto.WorkspaceDto;

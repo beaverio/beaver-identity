@@ -114,4 +114,24 @@ public class UserService {
     public void evictOldEmailCache(String oldEmail) {
         // This method exists solely to evict the old email cache entry
     }
+
+    @Caching(put = {
+            @CachePut(value = "users", key = "'id:' + #result.id"),
+            @CachePut(value = "users", key = "'email:' + #result.email")
+    })
+    public User createUser(String email, String password, String name) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new InvalidUserDataException("User with email " + email + " already exists");
+        }
+
+        User user = User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .name(name)
+                .
+                .active(true)
+                .build();
+
+        return userRepository.save(user);
+    }
 }
