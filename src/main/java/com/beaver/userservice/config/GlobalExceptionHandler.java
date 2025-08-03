@@ -1,7 +1,7 @@
 package com.beaver.userservice.config;
 
 import com.beaver.userservice.common.dto.ErrorResponse;
-import com.beaver.userservice.common.exception.AccessDeniedException;
+import com.beaver.auth.AccessDeniedException;
 import com.beaver.userservice.common.exception.InvalidUserDataException;
 import com.beaver.userservice.common.exception.UserAlreadyExistsException;
 import com.beaver.userservice.common.exception.UserNotFoundException;
