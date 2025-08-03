@@ -48,6 +48,6 @@ public class UserController {
     @GetMapping(value = "/self/workspaces", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<WorkspaceListDto>> getUserWorkspaces(@RequestHeader("X-User-Id") UUID userId) {
         List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(userId);
-        return ResponseEntity.ok(WorkspaceListDto.fromMemberships(memberships);
+        return ResponseEntity.ok(WorkspaceListDto.fromMemberships(memberships));
     }
 }
