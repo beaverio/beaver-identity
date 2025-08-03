@@ -1,6 +1,7 @@
 package com.beaver.userservice.auth;
 
 import com.beaver.auth.jwt.JwtService;
+import com.beaver.auth.exceptions.AuthenticationFailedException;
 import com.beaver.userservice.auth.dto.AuthResponse;
 import com.beaver.userservice.auth.dto.LoginRequest;
 import com.beaver.userservice.auth.dto.SignupRequest;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -71,7 +73,7 @@ public class AuthController {
             }
 
             // TODO: Allow User to set a default workspace
-            WorkspaceMembership primaryMembership = memberships.getFirst();
+            WorkspaceMembership primaryMembership = memberships.get(0);
             Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
                 .map(Permission::getCode)
                 .collect(Collectors.toSet());
@@ -188,74 +190,39 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@RequestHeader("Authorization") String authHeader) {
-        try {
-            String refreshToken = extractTokenFromHeader(authHeader);
+        String refreshToken = extractTokenFromHeader(authHeader);
 
-            // Validate refresh token
-            Boolean isValid = jwtService.isValidRefreshToken(refreshToken).block();
-            if (Boolean.FALSE.equals(isValid)) {
-                return ResponseEntity.status(401).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("Invalid refresh token")
-                        .build()
-                );
-            }
+        jwtService.validateRefreshToken(refreshToken).block();
+        String userId = jwtService.extractUserIdFromToken(refreshToken).block();
 
-            // Extract user ID and generate new access token
-            String userId = jwtService.extractUserId(refreshToken).block();
-            if (userId == null) {
-                return ResponseEntity.status(401).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("Invalid refresh token. Refresh token does not include `userId`")
-                        .build()
-                );
-            }
+        assert userId != null;
+        User user = userService.findById(UUID.fromString(userId));
 
-            User user = userService.findById(java.util.UUID.fromString(userId));
-
-            // Get primary workspace membership
-            List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
-            if (memberships.isEmpty()) {
-                return ResponseEntity.status(401).body(
-                    AuthResponse.builder()
-                        .success(false)
-                        .message("No workspace access")
-                        .build()
-                );
-            }
-
-            WorkspaceMembership primaryMembership = memberships.getFirst();
-            Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
-                .map(Permission::getCode)
-                .collect(Collectors.toSet());
-
-            // Generate new access token
-            String newAccessToken = jwtService.generateAccessToken(
-                user.getId().toString(),
-                user.getEmail(),
-                user.getName(),
-                primaryMembership.getWorkspace().getId().toString(),
-                permissions
-            );
-
-            return ResponseEntity.ok(AuthResponse.builder()
-                .success(true)
-                .message("Token refreshed")
-                .accessToken(newAccessToken)
-                .refreshToken(refreshToken) // Keep same refresh token
-                .build());
-
-        } catch (Exception e) {
-            log.error("Token refresh failed", e);
-            return ResponseEntity.status(401).body(
-                AuthResponse.builder()
-                    .success(false)
-                    .message("Token refresh failed")
-                    .build()
-            );
+        // TODO: Refresh for workspace in access_token/refresh_token, critical
+        List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
+        if (memberships.isEmpty()) {
+            throw new AuthenticationFailedException("No workspace access");
         }
+
+        WorkspaceMembership primaryMembership = memberships.getFirst();
+        Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
+            .map(Permission::getCode)
+            .collect(Collectors.toSet());
+
+        String newAccessToken = jwtService.generateAccessToken(
+            user.getId().toString(),
+            user.getEmail(),
+            user.getName(),
+            primaryMembership.getWorkspace().getId().toString(),
+            permissions
+        );
+
+        return ResponseEntity.ok(AuthResponse.builder()
+            .success(true)
+            .message("Token refreshed successfully")
+            .accessToken(newAccessToken)
+            .refreshToken(refreshToken)
+            .build());
     }
 
     private String extractTokenFromHeader(String authHeader) {
