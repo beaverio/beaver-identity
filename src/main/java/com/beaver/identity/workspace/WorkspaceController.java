@@ -1,13 +1,17 @@
 package com.beaver.identity.workspace;
 
+import com.beaver.auth.cookie.AuthCookieService;
 import com.beaver.auth.permissions.RequiresPermission;
 import com.beaver.auth.permissions.Permission;
+import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.workspace.dto.CreateWorkspaceRequest;
 import com.beaver.identity.workspace.dto.InviteMemberRequest;
+import com.beaver.identity.workspace.dto.SwitchWorkspaceRequest;
 import com.beaver.identity.workspace.dto.WorkspaceDto;
 import com.beaver.identity.workspace.entity.Workspace;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +23,7 @@ import java.util.UUID;
 public class WorkspaceController {
 
     private final WorkspaceService workspaceService;
+    private final AuthCookieService cookieService;
 
     @PostMapping
     public ResponseEntity<WorkspaceDto> createWorkspace(
@@ -47,5 +52,23 @@ public class WorkspaceController {
         // TODO: Implementation for inviting members
 
         return ResponseEntity.ok("Member invited");
+    }
+
+
+    @PostMapping("/switch-workspace")
+    public ResponseEntity<AuthResponse> switchWorkspace(
+            @RequestHeader("X-User-Id") UUID userId,
+            @Valid @RequestBody SwitchWorkspaceRequest request
+    ) {
+        String newAccessToken = workspaceService.switchWorkspace(userId, request.workspaceId());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(newAccessToken).toString())
+                .body(AuthResponse.builder()
+                        .success(true)
+                        .message("Workspace switched successfully")
+                        .userId(userId)
+                        .workspaceId(request.workspaceId())
+                        .build());
     }
 }
