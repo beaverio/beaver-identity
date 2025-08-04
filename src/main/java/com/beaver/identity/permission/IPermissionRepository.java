@@ -8,6 +8,4 @@ import java.util.Set;
 import java.util.UUID;
 
 @Repository
-public interface IPermissionRepository  extends JpaRepository<Permission, UUID> {
-    Set<Permission> findByCodeIn(Set<String> strings);
-}
+public interface IPermissionRepository  extends JpaRepository<Permission, UUID> { }

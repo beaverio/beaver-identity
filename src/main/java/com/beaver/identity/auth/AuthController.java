@@ -4,16 +4,20 @@ import com.beaver.auth.jwt.JwtService;
 import com.beaver.auth.cookie.AuthCookieService;
 import com.beaver.auth.exceptions.AuthenticationFailedException;
 import com.beaver.auth.exceptions.InvalidRefreshTokenException;
+import com.beaver.auth.permissions.RequiresPermission;
 import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.auth.dto.LoginRequest;
 import com.beaver.identity.auth.dto.SignupRequest;
+import com.beaver.identity.internal.dto.UpdateEmail;
+import com.beaver.identity.internal.dto.UpdatePassword;
+import com.beaver.identity.permission.entity.Permission;
 import com.beaver.identity.user.UserService;
 import com.beaver.identity.user.entity.User;
+import com.beaver.identity.user.dto.UserDto;
 import com.beaver.identity.workspace.WorkspaceService;
 import com.beaver.identity.workspace.entity.Workspace;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
-import com.beaver.identity.permission.entity.Permission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +63,7 @@ public class AuthController {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        WorkspaceMembership primaryMembership = memberships.get(0);
+        WorkspaceMembership primaryMembership = memberships.getFirst();
         Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
             .map(Permission::getCode)
             .collect(Collectors.toSet());
@@ -146,7 +150,7 @@ public class AuthController {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        WorkspaceMembership primaryMembership = memberships.get(0);
+        WorkspaceMembership primaryMembership = memberships.getFirst();
         Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
             .map(Permission::getCode)
             .collect(Collectors.toSet());
