@@ -1,5 +1,6 @@
 package com.beaver.identity.auth;
 
+import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
 import com.beaver.auth.cookie.AuthCookieService;
 import com.beaver.auth.exceptions.AuthenticationFailedException;
@@ -65,11 +66,13 @@ public class AuthController {
             .collect(Collectors.toSet());
 
         String accessToken = jwtService.generateAccessToken(
-            user.getId().toString(),
-            user.getEmail(),
-            user.getName(),
-            primaryMembership.getWorkspace().getId().toString(),
-            permissions
+                AccessToken.builder()
+                        .userId(user.getId().toString())
+                        .email(user.getEmail())
+                        .name(user.getName())
+                        .workspaceId(primaryMembership.getWorkspace().getId().toString())
+                        .permissions(permissions)
+                        .build()
         );
 
         String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
@@ -107,11 +110,13 @@ public class AuthController {
             .collect(Collectors.toSet());
 
         String accessToken = jwtService.generateAccessToken(
-            user.getId().toString(),
-            user.getEmail(),
-            user.getName(),
-            workspace.getId().toString(),
-            permissions
+                AccessToken.builder()
+                        .userId(user.getId().toString())
+                        .email(user.getEmail())
+                        .name(user.getName())
+                        .workspaceId(workspace.getId().toString())
+                        .permissions(permissions)
+                        .build()
         );
 
         String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
@@ -152,11 +157,13 @@ public class AuthController {
             .collect(Collectors.toSet());
 
         String newAccessToken = jwtService.generateAccessToken(
-            user.getId().toString(),
-            user.getEmail(),
-            user.getName(),
-            primaryMembership.getWorkspace().getId().toString(),
-            permissions
+                AccessToken.builder()
+                        .userId(user.getId().toString())
+                        .email(user.getEmail())
+                        .name(user.getName())
+                        .workspaceId(primaryMembership.getWorkspace().getId().toString())
+                        .permissions(permissions)
+                        .build()
         );
 
         return ResponseEntity.ok()

@@ -1,6 +1,7 @@
 package com.beaver.identity.workspace;
 
 import com.beaver.auth.exceptions.AccessDeniedException;
+import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
@@ -107,11 +108,13 @@ public class WorkspaceService {
         log.info("Access granted for workspace '{}' for user '{}'", workspaceId, userId);
 
         return jwtService.generateAccessToken(
-                user.getId().toString(),
-                user.getEmail(),
-                user.getName(),
-                workspaceId.toString(),
-                permissions
+                AccessToken.builder()
+                        .userId(user.getId().toString())
+                        .email(user.getEmail())
+                        .name(user.getName())
+                        .workspaceId(workspaceId.toString())
+                        .permissions(permissions)
+                        .build()
         );
     }
 }

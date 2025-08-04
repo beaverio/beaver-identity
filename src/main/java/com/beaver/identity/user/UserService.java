@@ -1,5 +1,6 @@
 package com.beaver.identity.user;
 
+import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
 import com.beaver.identity.common.exception.UserNotFoundException;
 import com.beaver.identity.common.exception.InvalidUserDataException;
@@ -141,11 +142,13 @@ public class UserService {
                 .collect(Collectors.toSet());
 
         return jwtService.generateAccessToken(
-                user.getId().toString(),
-                user.getEmail(),
-                user.getName(),
-                workspaceId.toString(),
-                permissions
+                AccessToken.builder()
+                        .userId(user.getId().toString())
+                        .email(user.getEmail())
+                        .name(user.getName())
+                        .workspaceId(workspaceId.toString())
+                        .permissions(permissions)
+                        .build()
         );
     }
 
