@@ -1,5 +1,6 @@
 package com.beaver.identity.permission;
 
+import com.beaver.auth.permissions.Permission;
 import com.beaver.identity.permission.entity.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +24,10 @@ public class RoleService {
         log.info("Creating default roles for workspace: {}", workspaceId);
 
         Role owner = createRole(workspaceId, "Owner", "Full access to all workspace resources", true);
-        Set<com.beaver.identity.permission.entity.Permission> allPermissions = Set.copyOf(permissionRepository.findAll());
+        Set<com.beaver.identity.permission.entity.Permission> allPermissions = permissionRepository.findAll()
+                .stream()
+                .filter(permission -> !Permission.DENY_ALL.getValue().equals(permission.getCode()))
+                .collect(Collectors.toSet());
         owner.setPermissions(allPermissions);
         roleRepository.save(owner);
         log.info("Created Owner role with {} permissions", allPermissions.size());
