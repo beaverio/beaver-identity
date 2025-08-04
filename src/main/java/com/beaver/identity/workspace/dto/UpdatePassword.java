@@ -1,4 +1,4 @@
-package com.beaver.identity.internal.dto;
+package com.beaver.identity.workspace.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
