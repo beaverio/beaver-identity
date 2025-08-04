@@ -1,7 +1,6 @@
 package com.beaver.identity.user;
 
 import com.beaver.auth.cookie.AuthCookieService;
-import com.beaver.auth.jwt.JwtService;
 import com.beaver.auth.permissions.Permission;
 import com.beaver.auth.permissions.RequiresPermission;
 import com.beaver.identity.auth.dto.AuthResponse;
@@ -13,7 +12,6 @@ import com.beaver.identity.user.dto.UpdateSelf;
 import com.beaver.identity.user.dto.UserDto;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.dto.WorkspaceListDto;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -35,7 +31,6 @@ public class UserController {
 
     private final UserService userService;
     private final MembershipService membershipService;
-    private final JwtService jwtService;
     private final AuthCookieService cookieService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -76,44 +71,30 @@ public class UserController {
             @RequestHeader("X-Workspace-Id") UUID workspaceId,
             @Valid @RequestBody UpdateEmail updateEmail)
     {
-        User user = userService.updateEmail(userId, updateEmail);
-
-        // Generate new access token with updated email
-        List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(userId);
-        WorkspaceMembership currentMembership = memberships.stream()
-                .filter(m -> m.getWorkspace().getId().equals(workspaceId))
-                .findFirst()
-                .orElse(memberships.getFirst());
-
-        Set<String> permissions = currentMembership.getRole().getPermissions().stream()
-                .map(com.beaver.identity.permission.entity.Permission::getCode)
-                .collect(Collectors.toSet());
-
-        String newAccessToken = jwtService.generateAccessToken(
-                user.getId().toString(),
-                user.getEmail(),
-                user.getName(),
-                workspaceId.toString(),
-                permissions
-        );
+        String newAccessToken = userService.updateEmailWithNewToken(userId, workspaceId, updateEmail);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(newAccessToken).toString())
                 .body(AuthResponse.builder()
                         .success(true)
                         .message("Email updated successfully")
-                        .userId(user.getId())
-                        .workspaceId(workspaceId)
+                        .userId(userId)
                         .build());
     }
 
     @PatchMapping("/update-password")
     @RequiresPermission(Permission.USER_WRITE)
-    public ResponseEntity<Void> updatePassword(
+    public ResponseEntity<AuthResponse> updatePassword(
             @RequestHeader("X-User-Id") UUID userId,
             @Valid @RequestBody UpdatePassword updatePassword)
     {
         userService.updatePassword(userId, updatePassword);
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity.ok()
+                .body(AuthResponse.builder()
+                        .success(true)
+                        .message("Password updated successfully")
+                        .userId(userId)
+                        .build());
     }
 }

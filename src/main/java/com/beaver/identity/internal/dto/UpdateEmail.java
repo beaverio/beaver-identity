@@ -6,9 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 public record UpdateEmail(
         @NotBlank(message = "Email is required")
         @Email(message = "Email must be valid")
-        String email,
-
-        @NotBlank(message = "Current password is required for verification")
-        String currentPassword
+        String email
 ) {
 }
