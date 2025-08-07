@@ -3,6 +3,7 @@ package com.beaver.identity.workspace;
 import com.beaver.auth.exceptions.AccessDeniedException;
 import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
+import com.beaver.identity.common.exception.NotFoundException;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
 import com.beaver.identity.permission.RoleService;
@@ -63,7 +64,7 @@ public class WorkspaceService {
 
     public Workspace findById(UUID workspaceId) {
         return workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found: " + workspaceId));
+                .orElseThrow(() -> new NotFoundException("Workspace not found: " + workspaceId));
     }
 
     public Workspace createDefaultWorkspace(User user) {

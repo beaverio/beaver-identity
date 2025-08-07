@@ -2,7 +2,7 @@ package com.beaver.identity.user;
 
 import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
-import com.beaver.identity.common.exception.UserNotFoundException;
+import com.beaver.identity.common.exception.NotFoundException;
 import com.beaver.identity.common.exception.InvalidUserDataException;
 import com.beaver.identity.workspace.dto.UpdateEmail;
 import com.beaver.identity.workspace.dto.UpdatePassword;
@@ -48,7 +48,7 @@ public class UserService {
     @Cacheable(value = "users", key = "'id:' + #id")
     public User findById(UUID id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     @Caching(put = {
@@ -65,7 +65,7 @@ public class UserService {
     })
     public User updateSelf(UUID id, UpdateSelf updateRequest) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         userMapper.mapToEntity(updateRequest, existingUser);
         return userRepository.save(existingUser);
@@ -77,7 +77,7 @@ public class UserService {
     })
     public User deleteUser(UUID id) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         userRepository.delete(existingUser);
         return existingUser;
@@ -113,7 +113,7 @@ public class UserService {
     })
     public User updateEmail(UUID id, UpdateEmail updateEmailRequest) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (userRepository.findByEmail(updateEmailRequest.email()).isPresent()) {
             throw new InvalidUserDataException("Email already exists");
@@ -154,7 +154,7 @@ public class UserService {
 
     public void updatePassword(UUID userId, UpdatePassword updatePasswordRequest) {
         User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!passwordEncoder.matches(updatePasswordRequest.currentPassword(), existingUser.getPassword())) {
             throw new InvalidUserDataException("Invalid current password");

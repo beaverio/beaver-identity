@@ -43,3 +43,8 @@ jwt:
 
 gateway:
   secret: ${GATEWAY_SECRET}
+
+logging:
+  level:
+    com.beaver: INFO
+    org.springframework.security: WARN

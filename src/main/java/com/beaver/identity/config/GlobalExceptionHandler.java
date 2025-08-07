@@ -3,7 +3,7 @@ package com.beaver.identity.config;
 import com.beaver.identity.common.dto.ErrorResponse;
 import com.beaver.identity.common.exception.InvalidUserDataException;
 import com.beaver.identity.common.exception.UserAlreadyExistsException;
-import com.beaver.identity.common.exception.UserNotFoundException;
+import com.beaver.identity.common.exception.NotFoundException;
 import com.beaver.auth.exceptions.AccessDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -51,12 +51,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
+    @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFound(
-            UserNotFoundException ex, HttpServletRequest request) {
+            NotFoundException ex, HttpServletRequest request) {
         ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.NOT_FOUND.value(),
-                "User Not Found",
+                "Not Found",
                 ex.getMessage(),
                 request.getRequestURI()
         );

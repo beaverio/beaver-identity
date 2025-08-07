@@ -1,0 +1,10 @@
+beaver:
+  dev:
+    mock-gateway:
+      enabled: true
+
+logging:
+  level:
+    com.beaver: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.boot.autoconfigure.condition: DEBUG
