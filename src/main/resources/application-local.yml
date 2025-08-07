@@ -3,7 +3,7 @@ server:
 
 beaver:
   dev:
-    mock-gateway:
+    mock-context:
       enabled: true
 
 logging:
