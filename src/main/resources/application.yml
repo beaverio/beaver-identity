@@ -4,6 +4,8 @@ server:
     context-path: /identity
 
 spring:
+  profiles:
+    active: ${ENV:local}
   config:
     import: optional:file:.env[.properties]
   application:
