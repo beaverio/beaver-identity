@@ -1,15 +1,17 @@
 package com.beaver.identity.user.entity;
 
 import com.beaver.identity.common.entity.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import com.beaver.identity.membership.entity.WorkspaceMembership;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicUpdate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -32,4 +34,8 @@ public class User extends BaseEntity {
 
     @Column()
     private String name;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<WorkspaceMembership> memberships = new ArrayList<>();
 }

@@ -1,9 +1,12 @@
 package com.beaver.identity.workspace.entity;
 
 import com.beaver.identity.common.entity.BaseEntity;
+import com.beaver.identity.membership.entity.WorkspaceMembership;
+import com.beaver.identity.role.entity.WorkspaceRole;
 import com.beaver.identity.workspace.enums.PlanType;
 import com.beaver.identity.workspace.enums.WorkspaceStatus;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -11,6 +14,8 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -34,4 +39,12 @@ public class Workspace extends BaseEntity {
 
     @Column(name = "trial_ends_at")
     private LocalDateTime trialEndsAt;
+
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<WorkspaceRole> roles = new ArrayList<>();
+
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<WorkspaceMembership> memberships = new ArrayList<>();
 }

@@ -64,11 +64,12 @@ public class UserService {
         @CacheEvict(value = "users", key = "'id:' + #id"),
         @CacheEvict(value = "users", key = "'email:' + #result.email")
     })
-    public void deleteUser(UUID id) {
+    public User deleteUser(UUID id) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         userRepository.delete(existingUser);
+        return existingUser;
     }
 
     @CacheEvict(value = "users", key = "'email:' + #oldEmail")

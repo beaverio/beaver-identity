@@ -52,9 +52,9 @@ public class UserController {
 
     @DeleteMapping()
     @RequiresRole(Role.WRITE)
-    public ResponseEntity<Void> deleteSelf(@RequestHeader("X-User-Id") UUID id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<String> deleteSelf(@RequestHeader("X-User-Id") UUID id) {
+        User deletedUser = userService.deleteUser(id);
+        return ResponseEntity.ok("User deleted with the following email: " + deletedUser.getEmail());
     }
 
     @GetMapping(value = "/workspaces", produces = MediaType.APPLICATION_JSON_VALUE)
