@@ -18,7 +18,7 @@ import java.util.Set;
 public class WorkspaceMembershipDto extends BaseDto {
     private UserDto user;
     private WorkspaceDto workspace;
-    private String roleName;
+    private String role;
     private Set<String> permissions;
     private MembershipStatus status;
     private LocalDateTime joinedAt;
@@ -28,16 +28,11 @@ public class WorkspaceMembershipDto extends BaseDto {
                 .id(membership.getId())
                 .user(UserDto.fromEntity(membership.getUser()))
                 .workspace(WorkspaceDto.fromEntity(membership.getWorkspace()))
-                .roleName(membership.getRole().getName())
-                .permissions(membership.getAllPermissionCodes())
+                .role(membership.getRole().getName())
                 .status(membership.getStatus())
                 .joinedAt(membership.getJoinedAt())
                 .createdAt(membership.getCreatedAt())
                 .updatedAt(membership.getUpdatedAt())
                 .build();
-    }
-
-    public Set<String> getAllPermissions() {
-        return permissions;
     }
 }

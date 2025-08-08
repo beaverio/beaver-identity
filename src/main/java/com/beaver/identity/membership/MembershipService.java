@@ -1,8 +1,10 @@
 package com.beaver.identity.membership;
 
+import com.beaver.auth.roles.Role;
 import com.beaver.identity.membership.enums.MembershipStatus;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
-import com.beaver.identity.permission.entity.Role;
+import com.beaver.identity.role.entity.WorkspaceRole;
+import com.beaver.identity.role.service.WorkspaceRoleService;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.entity.Workspace;
 import lombok.RequiredArgsConstructor;
@@ -13,29 +15,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
-@Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
+@Service
 public class MembershipService {
 
     private final IMembershipRepository membershipRepository;
+    private final WorkspaceRoleService roleService;
 
     public List<WorkspaceMembership> findActiveByUserId(UUID userId) {
         return membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
     }
 
-    public Optional<WorkspaceMembership> findByUserIdAndWorkspaceId(UUID userId, UUID workspaceId) {
-        return membershipRepository.findByUserIdAndWorkspaceIdAndStatus(
-                userId, workspaceId, MembershipStatus.ACTIVE);
-    }
+    public WorkspaceMembership addUserToWorkspace(User user, Workspace workspace, Role roleType) {
+        log.info("Adding user {} to workspace {} with role {}", user.getId(), workspace.getId(), roleType);
 
-    public WorkspaceMembership addUserToWorkspace(User user, Workspace workspace, Role role) {
-        log.info("Adding user {} to workspace {} with role {}", user.getId(), workspace.getId(), role.getName());
+        WorkspaceRole role = roleService.findByWorkspaceIdAndRoleType(workspace.getId(), roleType)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Role " + roleType + " not found for workspace " + workspace.getId() +
+                        ". This should not happen as all roles should be created during workspace setup."));
 
         WorkspaceMembership membership = WorkspaceMembership.builder()
                 .user(user)
@@ -47,7 +48,7 @@ public class MembershipService {
 
         WorkspaceMembership saved = membershipRepository.save(membership);
         evictMembershipCache(user.getId(), workspace.getId());
-        
+
         return saved;
     }
 

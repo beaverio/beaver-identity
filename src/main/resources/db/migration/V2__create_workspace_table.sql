@@ -1,0 +1,16 @@
+-- Create workspaces table for family budgeting application
+CREATE TABLE workspaces (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'SUSPENDED', 'DELETED')),
+    plan VARCHAR(20) NOT NULL DEFAULT 'STARTER' CHECK (plan IN ('STARTER', 'PREMIUM', 'ENTERPRISE')),
+    trial_ends_at TIMESTAMP WITH TIME ZONE,
+    settings JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_workspaces_status ON workspaces(status);
+CREATE INDEX idx_workspaces_plan ON workspaces(plan);
+CREATE INDEX idx_workspaces_created_at ON workspaces(created_at);

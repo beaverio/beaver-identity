@@ -8,7 +8,6 @@ import com.beaver.identity.workspace.dto.UpdateEmail;
 import com.beaver.identity.workspace.dto.UpdatePassword;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
-import com.beaver.identity.permission.entity.Permission;
 import com.beaver.identity.user.dto.UpdateSelf;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.user.mapper.IUserMapper;
@@ -23,9 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Set;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Transactional
 @RequiredArgsConstructor
@@ -52,14 +49,6 @@ public class UserService {
     }
 
     @Caching(put = {
-            @CachePut(value = "users", key = "'id:' + #user.id"),
-            @CachePut(value = "users", key = "'email:' + #user.email")
-    })
-    public User saveUser(User user) {
-        return userRepository.save(user);
-    }
-
-    @Caching(put = {
             @CachePut(value = "users", key = "'id:' + #id"),
             @CachePut(value = "users", key = "'email:' + #result.email")
     })
@@ -75,12 +64,11 @@ public class UserService {
         @CacheEvict(value = "users", key = "'id:' + #id"),
         @CacheEvict(value = "users", key = "'email:' + #result.email")
     })
-    public User deleteUser(UUID id) {
+    public void deleteUser(UUID id) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         userRepository.delete(existingUser);
-        return existingUser;
     }
 
     @CacheEvict(value = "users", key = "'email:' + #oldEmail")
@@ -137,17 +125,13 @@ public class UserService {
                 .findFirst()
                 .orElse(memberships.getFirst());
 
-        Set<String> permissions = currentMembership.getRole().getPermissions().stream()
-                .map(Permission::getCode)
-                .collect(Collectors.toSet());
-
         return jwtService.generateAccessToken(
                 AccessToken.builder()
                         .userId(user.getId().toString())
                         .email(user.getEmail())
                         .name(user.getName())
                         .workspaceId(workspaceId.toString())
-                        .permissions(permissions)
+                        .role(currentMembership.getRole().toString())
                         .build()
         );
     }

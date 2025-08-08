@@ -1,8 +1,8 @@
 package com.beaver.identity.workspace;
 
 import com.beaver.auth.cookie.AuthCookieService;
-import com.beaver.auth.permissions.RequiresPermission;
-import com.beaver.auth.permissions.Permission;
+import com.beaver.auth.roles.RequiresRole;
+import com.beaver.auth.roles.Role;
 import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.workspace.dto.CreateWorkspaceRequest;
 import com.beaver.identity.workspace.dto.InviteMemberRequest;
@@ -35,7 +35,7 @@ public class WorkspaceController {
     }
 
     @GetMapping("/current")
-    @RequiresPermission(Permission.WORKSPACE_READ)
+    @RequiresRole(Role.READ)
     public ResponseEntity<WorkspaceDto> getWorkspace(
             @RequestHeader("X-Workspace-Id") UUID workspaceId) {
         Workspace workspace = workspaceService.findById(workspaceId);
@@ -43,14 +43,13 @@ public class WorkspaceController {
     }
 
     @PostMapping("/current/members/invite")
-    @RequiresPermission(Permission.WORKSPACE_OWNER)
+    @RequiresRole(Role.ADMIN)
     public ResponseEntity<String> inviteMember(
             @RequestHeader("X-User-Id") UUID inviterId,
             @RequestHeader("X-Workspace-Id") UUID workspaceId,
             @Valid @RequestBody InviteMemberRequest request) {
 
         // TODO: Implementation for inviting members
-
         return ResponseEntity.ok("Member invited");
     }
 

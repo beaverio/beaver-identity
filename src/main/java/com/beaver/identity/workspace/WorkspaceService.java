@@ -3,12 +3,11 @@ package com.beaver.identity.workspace;
 import com.beaver.auth.exceptions.AccessDeniedException;
 import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
+import com.beaver.auth.roles.Role;
 import com.beaver.identity.common.exception.NotFoundException;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
-import com.beaver.identity.permission.RoleService;
-import com.beaver.identity.permission.entity.Permission;
-import com.beaver.identity.permission.entity.Role;
+import com.beaver.identity.role.service.WorkspaceRoleService;
 import com.beaver.identity.user.UserService;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.dto.CreateWorkspaceRequest;
@@ -21,22 +20,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-@Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
+@Service
 public class WorkspaceService {
 
     private final IWorkspaceRepository workspaceRepository;
-    private final RoleService roleService;
     private final MembershipService membershipService;
     private final UserService userService;
     private final JwtService jwtService;
+    private final WorkspaceRoleService roleService;
 
     public Workspace createWorkspace(CreateWorkspaceRequest request, UUID ownerId) {
         log.info("Creating workspace '{}' for user: {}", request.name(), ownerId);
@@ -50,14 +46,11 @@ public class WorkspaceService {
         workspace = workspaceRepository.save(workspace);
         log.info("Created workspace with ID: {}", workspace.getId());
 
-        // Create default roles (Owner and Viewer) for this workspace
-        roleService.createDefaultRoles(workspace.getId());
+        roleService.createDefaultRoles(workspace.getId(), workspace);
 
-        // Add creator as owner
-        Role ownerRole = roleService.findByWorkspaceIdAndName(workspace.getId(), "Owner");
         User owner = userService.findById(ownerId);
-        membershipService.addUserToWorkspace(owner, workspace, ownerRole);
-        log.info("Added user {} as owner of workspace {}", ownerId, workspace.getId());
+        WorkspaceMembership membership = membershipService.addUserToWorkspace(owner, workspace, Role.OWNER);
+        log.info("Added user {} as owner of workspace {} with membership {}", ownerId, workspace.getId(), membership.getId());
 
         return workspace;
     }
@@ -67,7 +60,7 @@ public class WorkspaceService {
                 .orElseThrow(() -> new NotFoundException("Workspace not found: " + workspaceId));
     }
 
-    public Workspace createDefaultWorkspace(User user) {
+    public WorkspaceMembership createDefaultWorkspace(User user) {
         log.info("Creating default workspace for user: {}", user.getId());
 
         String workspaceName = user.getName() + "'s Workspace";
@@ -80,15 +73,13 @@ public class WorkspaceService {
         workspace = workspaceRepository.save(workspace);
         log.info("Created default workspace with ID: {}", workspace.getId());
 
-        // Create default role (Owner) for this workspace
-        roleService.createDefaultRoles(workspace.getId());
+        roleService.createDefaultRoles(workspace.getId(), workspace);
 
-        // Add user as owner
-        Role ownerRole = roleService.findByWorkspaceIdAndName(workspace.getId(), "Owner");
-        membershipService.addUserToWorkspace(user, workspace, ownerRole);
-        log.info("Added user {} as owner of default workspace {}", user.getId(), workspace.getId());
+        WorkspaceMembership membership = membershipService.addUserToWorkspace(user, workspace, Role.OWNER);
+        log.info("Added user {} as owner of default workspace {} with membership {}",
+                user.getId(), workspace.getId(), membership.getId());
 
-        return workspace;
+        return membership;
     }
 
     public String switchWorkspace(UUID userId, UUID workspaceId) {
@@ -102,10 +93,6 @@ public class WorkspaceService {
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("User does not have access to this workspace"));
 
-        Set<String> permissions = membership.getRole().getPermissions().stream()
-                .map(Permission::getCode)
-                .collect(Collectors.toSet());
-
         log.info("Access granted for workspace '{}' for user '{}'", workspaceId, userId);
 
         return jwtService.generateAccessToken(
@@ -114,7 +101,7 @@ public class WorkspaceService {
                         .email(user.getEmail())
                         .name(user.getName())
                         .workspaceId(workspaceId.toString())
-                        .permissions(permissions)
+                        .role(membership.getRole().toString())
                         .build()
         );
     }

@@ -2,9 +2,8 @@ package com.beaver.identity.membership.entity;
 
 import com.beaver.identity.common.entity.BaseEntity;
 import com.beaver.identity.membership.enums.MembershipStatus;
-import com.beaver.identity.permission.entity.Permission;
+import com.beaver.identity.role.entity.WorkspaceRole;
 import com.beaver.identity.workspace.entity.Workspace;
-import com.beaver.identity.permission.entity.Role;
 import com.beaver.identity.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -14,18 +13,14 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-@Data
-@NoArgsConstructor
-@SuperBuilder
-@EqualsAndHashCode(callSuper = true)
-@DynamicUpdate
 @Entity
-@Table(name = "workspace_memberships", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "workspace_id"})
-})
+@Table(name = "workspace_memberships")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
+@NoArgsConstructor
+@DynamicUpdate
 public class WorkspaceMembership extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,28 +31,14 @@ public class WorkspaceMembership extends BaseEntity {
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    private WorkspaceRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private MembershipStatus status = MembershipStatus.ACTIVE;
 
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt = LocalDateTime.now();
-
-    public Set<String> getAllPermissionCodes() {
-        return role.getPermissions().stream()
-                .map(Permission::getCode)
-                .collect(Collectors.toSet());
-    }
-
-    public boolean isOwner() {
-        return "Owner".equals(role.getName());
-    }
-
-    public boolean isViewer() {
-        return "Viewer".equals(role.getName());
-    }
 }

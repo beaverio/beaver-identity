@@ -8,7 +8,6 @@ import com.beaver.auth.exceptions.InvalidRefreshTokenException;
 import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.auth.dto.LoginRequest;
 import com.beaver.identity.auth.dto.SignupRequest;
-import com.beaver.identity.permission.entity.Permission;
 import com.beaver.identity.user.UserService;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.WorkspaceService;
@@ -25,10 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Set;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -60,18 +57,16 @@ public class AuthController {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        WorkspaceMembership primaryMembership = memberships.getFirst();
-        Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
-            .map(Permission::getCode)
-            .collect(Collectors.toSet());
+        // TODO: Login to a default workspace, optionlly allow workspaceId within login request
+        WorkspaceMembership membership = memberships.getFirst();
 
         String accessToken = jwtService.generateAccessToken(
                 AccessToken.builder()
                         .userId(user.getId().toString())
                         .email(user.getEmail())
                         .name(user.getName())
-                        .workspaceId(primaryMembership.getWorkspace().getId().toString())
-                        .permissions(permissions)
+                        .workspaceId(membership.getWorkspace().getId().toString())
+                        .role(membership.getRole().toString())
                         .build()
         );
 
@@ -84,7 +79,7 @@ public class AuthController {
                     .success(true)
                     .message("Login successful")
                     .userId(user.getId())
-                    .workspaceId(primaryMembership.getWorkspace().getId())
+                    .workspaceId(membership.getWorkspace().getId())
                     .build()
             );
     }
@@ -97,25 +92,15 @@ public class AuthController {
         }
 
         User user = userService.createUser(request.email(), request.password(), request.name());
-        Workspace workspace = workspaceService.createDefaultWorkspace(user);
-
-        Optional<WorkspaceMembership> membershipOpt = membershipService.findByUserIdAndWorkspaceId(user.getId(), workspace.getId());
-        if (membershipOpt.isEmpty()) {
-            throw new AuthenticationFailedException("Failed to find workspace membership after creation");
-        }
-
-        WorkspaceMembership membership = membershipOpt.get();
-        Set<String> permissions = membership.getRole().getPermissions().stream()
-            .map(Permission::getCode)
-            .collect(Collectors.toSet());
+        WorkspaceMembership membership = workspaceService.createDefaultWorkspace(user);
 
         String accessToken = jwtService.generateAccessToken(
                 AccessToken.builder()
                         .userId(user.getId().toString())
                         .email(user.getEmail())
                         .name(user.getName())
-                        .workspaceId(workspace.getId().toString())
-                        .permissions(permissions)
+                        .workspaceId(membership.getWorkspace().getId().toString())
+                        .role(membership.getRole().toString())
                         .build()
         );
 
@@ -151,18 +136,16 @@ public class AuthController {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        WorkspaceMembership primaryMembership = memberships.getFirst();
-        Set<String> permissions = primaryMembership.getRole().getPermissions().stream()
-            .map(Permission::getCode)
-            .collect(Collectors.toSet());
+        // TODO: Add workspaceId to refresh token to allow refresh of current workspace
+        WorkspaceMembership membership = memberships.getFirst();
 
         String newAccessToken = jwtService.generateAccessToken(
                 AccessToken.builder()
                         .userId(user.getId().toString())
                         .email(user.getEmail())
                         .name(user.getName())
-                        .workspaceId(primaryMembership.getWorkspace().getId().toString())
-                        .permissions(permissions)
+                        .workspaceId(membership.getWorkspace().getId().toString())
+                        .role(membership.getRole().toString())
                         .build()
         );
 
@@ -172,7 +155,7 @@ public class AuthController {
                     .success(true)
                     .message("Token refresh successful")
                     .userId(user.getId())
-                    .workspaceId(primaryMembership.getWorkspace().getId())
+                    .workspaceId(membership.getWorkspace().getId())
                     .build()
             );
     }
