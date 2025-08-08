@@ -29,10 +29,6 @@ public class WorkspaceRole extends BaseEntity {
     @Convert(converter = RoleConverter.class)
     private Role roleType;
 
-    public String getName() {
-        return roleType.name();
-    }
-
     @Override
     public String toString() {
         return roleType.name();

@@ -28,7 +28,7 @@ public class WorkspaceMembershipDto extends BaseDto {
                 .id(membership.getId())
                 .user(UserDto.fromEntity(membership.getUser()))
                 .workspace(WorkspaceDto.fromEntity(membership.getWorkspace()))
-                .role(membership.getRole().getName())
+                .role(membership.getRole().toString())
                 .status(membership.getStatus())
                 .joinedAt(membership.getJoinedAt())
                 .createdAt(membership.getCreatedAt())
