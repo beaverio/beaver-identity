@@ -111,6 +111,7 @@ public class UserService {
         existingUser.setEmail(updateEmailRequest.email());
         User updatedUser = userRepository.save(existingUser);
 
+        // TODO: Take a look at evicting old email after changing. Its still in Redis after update -> login
         evictOldEmailCache(oldEmail);
 
         return updatedUser;
