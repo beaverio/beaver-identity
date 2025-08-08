@@ -5,13 +5,13 @@ import com.beaver.auth.jwt.JwtService;
 import com.beaver.auth.cookie.AuthCookieService;
 import com.beaver.auth.exceptions.AuthenticationFailedException;
 import com.beaver.auth.exceptions.InvalidRefreshTokenException;
+import com.beaver.auth.jwt.RefreshToken;
 import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.auth.dto.LoginRequest;
 import com.beaver.identity.auth.dto.SignupRequest;
 import com.beaver.identity.user.UserService;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.WorkspaceService;
-import com.beaver.identity.workspace.entity.Workspace;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
 import jakarta.servlet.http.HttpServletRequest;
@@ -70,7 +70,12 @@ public class AuthController {
                         .build()
         );
 
-        String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
+        String refreshToken = jwtService.generateRefreshToken(
+                RefreshToken.builder()
+                        .userId(user.getId().toString())
+                        .workspaceId(membership.getWorkspace().getId().toString())
+                        .build()
+        );
 
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(accessToken).toString())
@@ -104,7 +109,12 @@ public class AuthController {
                         .build()
         );
 
-        String refreshToken = jwtService.generateRefreshToken(user.getId().toString());
+        String refreshToken = jwtService.generateRefreshToken(
+                RefreshToken.builder()
+                        .userId(user.getId().toString())
+                        .workspaceId(membership.getWorkspace().getId().toString())
+                        .build()
+        );
 
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(accessToken).toString())
@@ -127,6 +137,7 @@ public class AuthController {
 
         jwtService.validateRefreshToken(refreshToken).block();
         String userId = jwtService.extractUserIdFromToken(refreshToken).block();
+        String workspaceId = jwtService.extractWorkspaceIdFromToken(refreshToken).block();
 
         assert userId != null;
         User user = userService.findById(UUID.fromString(userId));
@@ -136,8 +147,9 @@ public class AuthController {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        // TODO: Add workspaceId to refresh token to allow refresh of current workspace
-        WorkspaceMembership membership = memberships.getFirst();
+        assert workspaceId != null;
+        WorkspaceMembership membership = membershipService.findByUserIdAndWorkspaceId(user.getId(), UUID.fromString(workspaceId))
+                .orElseThrow(() -> new AuthenticationFailedException("User has no memberships to that workspace"));
 
         String newAccessToken = jwtService.generateAccessToken(
                 AccessToken.builder()
@@ -153,7 +165,7 @@ public class AuthController {
             .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(newAccessToken).toString())
             .body(AuthResponse.builder()
                     .success(true)
-                    .message("Token refresh successful")
+                    .message("Token refreshed successful")
                     .userId(user.getId())
                     .workspaceId(membership.getWorkspace().getId())
                     .build()

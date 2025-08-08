@@ -3,6 +3,7 @@ package com.beaver.identity.workspace;
 import com.beaver.auth.exceptions.AccessDeniedException;
 import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
+import com.beaver.auth.jwt.RefreshToken;
 import com.beaver.auth.roles.Role;
 import com.beaver.identity.common.exception.NotFoundException;
 import com.beaver.identity.membership.MembershipService;
@@ -19,7 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -82,7 +85,7 @@ public class WorkspaceService {
         return membership;
     }
 
-    public String switchWorkspace(UUID userId, UUID workspaceId) {
+    public Map<String, String> switchWorkspace(UUID userId, UUID workspaceId) {
         log.info("Attempting to switch workspace '{}' for user '{}'", workspaceId, userId);
 
         User user = userService.findById(userId);
@@ -95,14 +98,27 @@ public class WorkspaceService {
 
         log.info("Access granted for workspace '{}' for user '{}'", workspaceId, userId);
 
-        return jwtService.generateAccessToken(
+        String newAccessToken = jwtService.generateAccessToken(
                 AccessToken.builder()
                         .userId(user.getId().toString())
                         .email(user.getEmail())
                         .name(user.getName())
-                        .workspaceId(workspaceId.toString())
+                        .workspaceId(membership.getWorkspace().getId().toString())
                         .role(membership.getRole().toString())
                         .build()
         );
+
+        String newRefreshToken = jwtService.generateRefreshToken(
+                RefreshToken.builder()
+                        .userId(user.getId().toString())
+                        .workspaceId(membership.getWorkspace().getId().toString())
+                        .build()
+        );
+
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("accessToken", newAccessToken);
+        tokens.put("refreshToken", newRefreshToken);
+
+        return tokens;
     }
 }

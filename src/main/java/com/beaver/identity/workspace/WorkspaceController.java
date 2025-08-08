@@ -15,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -59,10 +60,11 @@ public class WorkspaceController {
             @RequestHeader("X-User-Id") UUID userId,
             @Valid @RequestBody SwitchWorkspaceRequest request
     ) {
-        String newAccessToken = workspaceService.switchWorkspace(userId, request.workspaceId());
+        Map<String, String> tokens = workspaceService.switchWorkspace(userId, request.workspaceId());
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(newAccessToken).toString())
+                .header(HttpHeaders.SET_COOKIE, cookieService.createAccessTokenCookie(tokens.get("accessToken")).toString())
+                .header(HttpHeaders.SET_COOKIE, cookieService.createRefreshTokenCookie(tokens.get("refreshToken")).toString())
                 .body(AuthResponse.builder()
                         .success(true)
                         .message("Workspace switched successfully")

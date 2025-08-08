@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -28,6 +29,10 @@ public class MembershipService {
 
     public List<WorkspaceMembership> findActiveByUserId(UUID userId) {
         return membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
+    }
+
+    public Optional<WorkspaceMembership> findByUserIdAndWorkspaceId(UUID userId, UUID workspaceId) {
+        return membershipRepository.findByUserIdAndWorkspaceIdAndStatus(userId, workspaceId, MembershipStatus.ACTIVE);
     }
 
     public WorkspaceMembership addUserToWorkspace(User user, Workspace workspace, Role roleType) {
