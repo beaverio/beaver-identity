@@ -12,6 +12,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -34,6 +35,9 @@ public class User extends BaseEntity {
 
     @Column()
     private String name;
+
+    @Column(name = "last_workspace_id")
+    private UUID lastWorkspaceId;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

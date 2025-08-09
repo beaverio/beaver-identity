@@ -12,6 +12,7 @@ import com.beaver.identity.user.dto.UpdateSelf;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.user.mapper.IUserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,16 +25,17 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.List;
 
+@Slf4j
 @Transactional
 @RequiredArgsConstructor
 @Service
 public class UserService {
 
     private final IUserRepository userRepository;
-    private final IUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final MembershipService membershipService;
+    private final IUserMapper userMapper;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "users", key = "'email:' + #email")
@@ -52,12 +54,21 @@ public class UserService {
             @CachePut(value = "users", key = "'id:' + #id"),
             @CachePut(value = "users", key = "'email:' + #result.email")
     })
-    public User updateSelf(UUID id, UpdateSelf updateRequest) {
+    public User updateUser(UUID id, UpdateSelf updateRequest) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
+        log.info("Before update - lastWorkspaceId: {}", existingUser.getLastWorkspaceId());
+        log.info("UpdateSelf DTO - lastWorkspaceId: {}", updateRequest.lastWorkspaceId());
+
         userMapper.mapToEntity(updateRequest, existingUser);
-        return userRepository.save(existingUser);
+
+        log.info("After mapping - lastWorkspaceId: {}", existingUser.getLastWorkspaceId());
+
+        User savedUser = userRepository.save(existingUser);
+        log.info("After save - lastWorkspaceId: {}", savedUser.getLastWorkspaceId());
+
+        return savedUser;
     }
 
     @Caching(evict = {

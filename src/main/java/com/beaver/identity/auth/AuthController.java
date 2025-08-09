@@ -10,6 +10,7 @@ import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.auth.dto.LoginRequest;
 import com.beaver.identity.auth.dto.SignupRequest;
 import com.beaver.identity.user.UserService;
+import com.beaver.identity.user.dto.UpdateSelf;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.WorkspaceService;
 import com.beaver.identity.membership.MembershipService;
@@ -57,8 +58,10 @@ public class AuthController {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        // TODO: Login to a default workspace, optionlly allow workspaceId within login request
-        WorkspaceMembership membership = memberships.getFirst();
+        WorkspaceMembership membership = memberships.stream()
+                .filter(m -> m.getWorkspace().getId().equals(user.getLastWorkspaceId()))
+                .findFirst()
+                .orElse(memberships.getFirst());
 
         String accessToken = jwtService.generateAccessToken(
                 AccessToken.builder()
@@ -98,6 +101,10 @@ public class AuthController {
 
         User user = userService.createUser(request.email(), request.password(), request.name());
         WorkspaceMembership membership = workspaceService.createDefaultWorkspace(user);
+
+        userService.updateUser(user.getId(), UpdateSelf.builder()
+                .lastWorkspaceId(membership.getWorkspace().getId())
+                .build());
 
         String accessToken = jwtService.generateAccessToken(
                 AccessToken.builder()

@@ -10,6 +10,7 @@ import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
 import com.beaver.identity.role.service.WorkspaceRoleService;
 import com.beaver.identity.user.UserService;
+import com.beaver.identity.user.dto.UpdateSelf;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.dto.CreateWorkspaceRequest;
 import com.beaver.identity.workspace.enums.PlanType;
@@ -97,6 +98,7 @@ public class WorkspaceService {
                 .orElseThrow(() -> new AccessDeniedException("User does not have access to this workspace"));
 
         log.info("Access granted for workspace '{}' for user '{}'", workspaceId, userId);
+        userService.updateUser(user.getId(), UpdateSelf.builder().lastWorkspaceId(membership.getWorkspace().getId()).build());
 
         String newAccessToken = jwtService.generateAccessToken(
                 AccessToken.builder()

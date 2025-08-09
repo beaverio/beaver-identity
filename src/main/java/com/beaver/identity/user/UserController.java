@@ -46,7 +46,7 @@ public class UserController {
             @RequestHeader("X-User-Id") UUID id,
             @Valid @RequestBody UpdateSelf updateSelf)
     {
-        User user = userService.updateSelf(id, updateSelf);
+        User user = userService.updateUser(id, updateSelf);
         return ResponseEntity.ok(UserDto.fromEntity(user));
     }
 
