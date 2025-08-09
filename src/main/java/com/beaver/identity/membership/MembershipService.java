@@ -43,6 +43,11 @@ public class MembershipService {
         return membershipRepository.findByUserIdAndWorkspaceIdAndStatus(userId, workspaceId, MembershipStatus.ACTIVE);
     }
 
+    @Transactional(readOnly = true)
+    public boolean membershipExists(UUID userId, UUID workspaceId) {
+        return findByUserIdAndWorkspaceId(userId, workspaceId).isPresent();
+    }
+
     @Caching(evict = {
             @CacheEvict(key = "'user:' + #user.id"),
             @CacheEvict(key = "'user:' + #user.id + ':workspace:' + #workspace.id")
