@@ -5,6 +5,7 @@ import com.beaver.auth.roles.Role;
 import com.beaver.auth.roles.RequiresRole;
 import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.common.mapper.GenericMapper;
+import com.beaver.identity.membership.dto.WorkspaceMembershipDto;
 import com.beaver.identity.user.dto.UpdateUser;
 import com.beaver.identity.user.dto.UpdateEmail;
 import com.beaver.identity.user.dto.UpdatePassword;
@@ -12,7 +13,6 @@ import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
 import com.beaver.identity.user.dto.UserDto;
 import com.beaver.identity.user.entity.User;
-import com.beaver.identity.workspace.dto.WorkspaceListDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,9 +61,9 @@ public class UserController {
 
     @GetMapping(value = "/workspaces", produces = MediaType.APPLICATION_JSON_VALUE)
     @RequiresRole(Role.READ)
-    public ResponseEntity<List<WorkspaceListDto>> getUserWorkspaces(@RequestHeader("X-User-Id") UUID userId) {
+    public ResponseEntity<List<WorkspaceMembershipDto>> getUserWorkspaces(@RequestHeader("X-User-Id") UUID userId) {
         List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(userId);
-        return ResponseEntity.ok(WorkspaceListDto.fromMemberships(memberships));
+        return ResponseEntity.ok(mapper.toDto(memberships, WorkspaceMembershipDto.class));
     }
 
     @PatchMapping("/update-email")
