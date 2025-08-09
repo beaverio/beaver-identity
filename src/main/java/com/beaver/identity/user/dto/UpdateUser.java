@@ -5,7 +5,7 @@ import lombok.Builder;
 import java.util.UUID;
 
 @Builder
-public record UpdateSelf(
+public record UpdateUser(
         String name,
         UUID lastWorkspaceId
 ) {

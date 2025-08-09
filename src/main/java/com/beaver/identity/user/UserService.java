@@ -4,15 +4,17 @@ import com.beaver.auth.jwt.AccessToken;
 import com.beaver.auth.jwt.JwtService;
 import com.beaver.identity.common.exception.NotFoundException;
 import com.beaver.identity.common.exception.InvalidUserDataException;
-import com.beaver.identity.workspace.dto.UpdateEmail;
-import com.beaver.identity.workspace.dto.UpdatePassword;
+import com.beaver.identity.common.mapper.GenericMapper;
+import com.beaver.identity.user.dto.UpdateEmail;
+import com.beaver.identity.user.dto.UpdatePassword;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
-import com.beaver.identity.user.dto.UpdateSelf;
+import com.beaver.identity.user.dto.UpdateUser;
 import com.beaver.identity.user.entity.User;
-import com.beaver.identity.user.mapper.IUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -29,51 +31,45 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 @Service
+@CacheConfig(cacheNames = "users")
 public class UserService {
 
     private final IUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final MembershipService membershipService;
-    private final IUserMapper userMapper;
+    private final GenericMapper mapper;
+    private final CacheManager cacheManager;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "users", key = "'email:' + #email")
+    @Cacheable(key = "'email:' + #email")
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "users", key = "'id:' + #id")
+    @Cacheable(key = "'id:' + #id")
     public User findById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     @Caching(put = {
-            @CachePut(value = "users", key = "'id:' + #id"),
-            @CachePut(value = "users", key = "'email:' + #result.email")
+            @CachePut(key = "'id:' + #id"),
+            @CachePut(key = "'email:' + #result.email")
     })
-    public User updateUser(UUID id, UpdateSelf updateRequest) {
+    public User updateUser(UUID id, UpdateUser updateRequest) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        log.info("Before update - lastWorkspaceId: {}", existingUser.getLastWorkspaceId());
-        log.info("UpdateSelf DTO - lastWorkspaceId: {}", updateRequest.lastWorkspaceId());
+        mapper.updateEntity(updateRequest, existingUser);
 
-        userMapper.mapToEntity(updateRequest, existingUser);
-
-        log.info("After mapping - lastWorkspaceId: {}", existingUser.getLastWorkspaceId());
-
-        User savedUser = userRepository.save(existingUser);
-        log.info("After save - lastWorkspaceId: {}", savedUser.getLastWorkspaceId());
-
-        return savedUser;
+        return userRepository.save(existingUser);
     }
 
     @Caching(evict = {
-        @CacheEvict(value = "users", key = "'id:' + #id"),
-        @CacheEvict(value = "users", key = "'email:' + #result.email")
+        @CacheEvict(key = "'id:' + #id"),
+        @CacheEvict(key = "'email:' + #result.email")
     })
     public User deleteUser(UUID id) {
         User existingUser = userRepository.findById(id)
@@ -83,14 +79,9 @@ public class UserService {
         return existingUser;
     }
 
-    @CacheEvict(value = "users", key = "'email:' + #oldEmail")
-    public void evictOldEmailCache(String oldEmail) {
-        // This method exists solely to evict the old email cache entry
-    }
-
     @Caching(put = {
-            @CachePut(value = "users", key = "'id:' + #result.id"),
-            @CachePut(value = "users", key = "'email:' + #result.email")
+            @CachePut(key = "'id:' + #result.id"),
+            @CachePut(key = "'email:' + #result.email")
     })
     public User createUser(String email, String password, String name) {
         if (userRepository.findByEmail(email).isPresent()) {
@@ -108,8 +99,8 @@ public class UserService {
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "users", key = "'id:' + #id"),
-            @CacheEvict(value = "users", key = "'email:' + #result.email")
+            @CacheEvict(key = "'id:' + #id"),
+            @CacheEvict(key = "'email:' + #result.email")
     })
     public User updateEmail(UUID id, UpdateEmail updateEmailRequest) {
         User existingUser = userRepository.findById(id)
@@ -120,13 +111,13 @@ public class UserService {
         }
 
         String oldEmail = existingUser.getEmail();
+        var cache = cacheManager.getCache("users");
+        if (cache != null) {
+            cache.evictIfPresent("email:" + oldEmail);
+        }
+
         existingUser.setEmail(updateEmailRequest.email());
-        User updatedUser = userRepository.save(existingUser);
-
-        // TODO: Take a look at evicting old email after changing. Its still in Redis after update -> login
-        evictOldEmailCache(oldEmail);
-
-        return updatedUser;
+        return userRepository.save(existingUser);
     }
 
     public String updateEmailWithNewToken(UUID userId, UUID workspaceId, UpdateEmail updateEmail) {

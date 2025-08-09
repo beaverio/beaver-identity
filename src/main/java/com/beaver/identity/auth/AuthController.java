@@ -10,7 +10,7 @@ import com.beaver.identity.auth.dto.AuthResponse;
 import com.beaver.identity.auth.dto.LoginRequest;
 import com.beaver.identity.auth.dto.SignupRequest;
 import com.beaver.identity.user.UserService;
-import com.beaver.identity.user.dto.UpdateSelf;
+import com.beaver.identity.user.dto.UpdateUser;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.WorkspaceService;
 import com.beaver.identity.membership.MembershipService;
@@ -102,7 +102,7 @@ public class AuthController {
         User user = userService.createUser(request.email(), request.password(), request.name());
         WorkspaceMembership membership = workspaceService.createDefaultWorkspace(user);
 
-        userService.updateUser(user.getId(), UpdateSelf.builder()
+        userService.updateUser(user.getId(), UpdateUser.builder()
                 .lastWorkspaceId(membership.getWorkspace().getId())
                 .build());
 
@@ -146,7 +146,6 @@ public class AuthController {
         String userId = jwtService.extractUserIdFromToken(refreshToken).block();
         String workspaceId = jwtService.extractWorkspaceIdFromToken(refreshToken).block();
 
-        assert userId != null;
         User user = userService.findById(UUID.fromString(userId));
 
         List<WorkspaceMembership> memberships = membershipService.findActiveByUserId(user.getId());
@@ -154,7 +153,6 @@ public class AuthController {
             throw new AuthenticationFailedException("User has no active workspaces");
         }
 
-        assert workspaceId != null;
         WorkspaceMembership membership = membershipService.findByUserIdAndWorkspaceId(user.getId(), UUID.fromString(workspaceId))
                 .orElseThrow(() -> new AuthenticationFailedException("User has no memberships to that workspace"));
 

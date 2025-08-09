@@ -4,11 +4,12 @@ import com.beaver.auth.cookie.AuthCookieService;
 import com.beaver.auth.roles.Role;
 import com.beaver.auth.roles.RequiresRole;
 import com.beaver.identity.auth.dto.AuthResponse;
-import com.beaver.identity.workspace.dto.UpdateEmail;
-import com.beaver.identity.workspace.dto.UpdatePassword;
+import com.beaver.identity.common.mapper.GenericMapper;
+import com.beaver.identity.user.dto.UpdateUser;
+import com.beaver.identity.user.dto.UpdateEmail;
+import com.beaver.identity.user.dto.UpdatePassword;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
-import com.beaver.identity.user.dto.UpdateSelf;
 import com.beaver.identity.user.dto.UserDto;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.dto.WorkspaceListDto;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final GenericMapper mapper;
     private final MembershipService membershipService;
     private final AuthCookieService cookieService;
 
@@ -37,17 +39,17 @@ public class UserController {
     @RequiresRole(Role.READ)
     public ResponseEntity<UserDto> getSelf(@RequestHeader("X-User-Id") UUID id) {
         User user = userService.findById(id);
-        return ResponseEntity.ok(UserDto.fromEntity(user));
+        return ResponseEntity.ok(mapper.toDto(user, UserDto.class));
     }
 
     @PatchMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @RequiresRole(Role.WRITE)
     public ResponseEntity<UserDto> updateSelf(
             @RequestHeader("X-User-Id") UUID id,
-            @Valid @RequestBody UpdateSelf updateSelf)
+            @Valid @RequestBody UpdateUser updateUser)
     {
-        User user = userService.updateUser(id, updateSelf);
-        return ResponseEntity.ok(UserDto.fromEntity(user));
+        User user = userService.updateUser(id, updateUser);
+        return ResponseEntity.ok(mapper.toDto(user, UserDto.class));
     }
 
     @DeleteMapping()
