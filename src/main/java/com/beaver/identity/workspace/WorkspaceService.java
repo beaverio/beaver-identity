@@ -6,6 +6,7 @@ import com.beaver.auth.jwt.JwtService;
 import com.beaver.auth.jwt.RefreshToken;
 import com.beaver.auth.roles.Role;
 import com.beaver.identity.common.exception.NotFoundException;
+import com.beaver.identity.common.mapper.GenericMapper;
 import com.beaver.identity.membership.MembershipService;
 import com.beaver.identity.membership.entity.WorkspaceMembership;
 import com.beaver.identity.role.service.WorkspaceRoleService;
@@ -13,11 +14,16 @@ import com.beaver.identity.user.UserService;
 import com.beaver.identity.user.dto.UpdateUser;
 import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.dto.CreateWorkspaceRequest;
+import com.beaver.identity.workspace.dto.UpdateWorkspaceRequest;
 import com.beaver.identity.workspace.enums.PlanType;
 import com.beaver.identity.workspace.entity.Workspace;
 import com.beaver.identity.workspace.enums.WorkspaceStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +36,7 @@ import java.util.UUID;
 @Transactional
 @Slf4j
 @Service
+@CacheConfig(cacheNames = "workspaces")
 public class WorkspaceService {
 
     private final IWorkspaceRepository workspaceRepository;
@@ -37,7 +44,9 @@ public class WorkspaceService {
     private final UserService userService;
     private final JwtService jwtService;
     private final WorkspaceRoleService roleService;
+    private final GenericMapper mapper;
 
+    @CachePut(key = "'id:' + #result.id")
     public Workspace createWorkspace(CreateWorkspaceRequest request, UUID ownerId) {
         log.info("Creating workspace '{}' for user: {}", request.name(), ownerId);
 
@@ -59,11 +68,24 @@ public class WorkspaceService {
         return workspace;
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(key = "'id:' + #workspaceId")
     public Workspace findById(UUID workspaceId) {
         return workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new NotFoundException("Workspace not found: " + workspaceId));
     }
 
+    @CachePut(key = "'id:' + #workspaceId")
+    public Workspace updateWorkspace(UUID workspaceId, UpdateWorkspaceRequest updateWorkspaceRequest) {
+        Workspace existingWorkspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new NotFoundException("Workspace not found"));
+
+        mapper.updateEntity(updateWorkspaceRequest, existingWorkspace);
+
+        return workspaceRepository.save(existingWorkspace);
+    }
+
+    @CachePut(key = "'id:' + #result.workspace.id")
     public WorkspaceMembership createDefaultWorkspace(User user) {
         log.info("Creating default workspace for user: {}", user.getId());
 

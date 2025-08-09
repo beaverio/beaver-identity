@@ -11,8 +11,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @SuperBuilder
 public abstract class BaseDto {
-
     private UUID id;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private UUID updatedBy;
 }
