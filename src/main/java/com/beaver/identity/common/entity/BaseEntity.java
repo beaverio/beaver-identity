@@ -47,12 +47,9 @@ public abstract class BaseEntity {
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
-                String method = attributes.getRequest().getMethod();
-                if ("PATCH".equals(method) || "PUT".equals(method)) {
-                    String userId = attributes.getRequest().getHeader("X-User-Id");
-                    if (userId != null && !userId.isEmpty()) {
-                        return UUID.fromString(userId);
-                    }
+                String userId = attributes.getRequest().getHeader("X-User-Id");
+                if (userId != null && !userId.isEmpty()) {
+                    return UUID.fromString(userId);
                 }
             }
         } catch (Exception e) {
