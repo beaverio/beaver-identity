@@ -6,6 +6,8 @@ import com.beaver.identity.role.repository.IWorkspaceRoleRepository;
 import com.beaver.identity.workspace.entity.Workspace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 @Transactional
 @Slf4j
 @Service
+@CacheConfig(cacheNames = "workspace_roles")
 public class WorkspaceRoleService {
 
     private final IWorkspaceRoleRepository roleRepository;
@@ -47,6 +50,7 @@ public class WorkspaceRoleService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(key = "'workspace:' + #workspaceId + ':role:' + #roleType")
     public Optional<WorkspaceRole> findByWorkspaceIdAndRoleType(UUID workspaceId, Role roleType) {
         return roleRepository.findByWorkspaceIdAndRoleType(workspaceId, roleType);
     }

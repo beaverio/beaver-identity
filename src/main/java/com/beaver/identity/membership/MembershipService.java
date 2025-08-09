@@ -9,7 +9,10 @@ import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.entity.Workspace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,19 +25,28 @@ import java.util.UUID;
 @Transactional
 @Slf4j
 @Service
+@CacheConfig(cacheNames = "memberships")
 public class MembershipService {
 
     private final IMembershipRepository membershipRepository;
     private final WorkspaceRoleService roleService;
 
+    @Transactional(readOnly = true)
+    @Cacheable(key = "'user:' + #userId")
     public List<WorkspaceMembership> findActiveByUserId(UUID userId) {
         return membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(key = "'user:' + #userId + ':workspace:' + #workspaceId")
     public Optional<WorkspaceMembership> findByUserIdAndWorkspaceId(UUID userId, UUID workspaceId) {
         return membershipRepository.findByUserIdAndWorkspaceIdAndStatus(userId, workspaceId, MembershipStatus.ACTIVE);
     }
 
+    @Caching(evict = {
+            @CacheEvict(key = "'user:' + #user.id"),
+            @CacheEvict(key = "'user:' + #user.id + ':workspace:' + #workspace.id")
+    })
     public WorkspaceMembership addUserToWorkspace(User user, Workspace workspace, Role roleType) {
         log.info("Adding user {} to workspace {} with role {}", user.getId(), workspace.getId(), roleType);
 
@@ -51,14 +63,6 @@ public class MembershipService {
                 .joinedAt(LocalDateTime.now())
                 .build();
 
-        WorkspaceMembership saved = membershipRepository.save(membership);
-        evictMembershipCache(user.getId(), workspace.getId());
-
-        return saved;
-    }
-
-    @CacheEvict(value = "memberships", key = "'user:' + #userId + ':workspace:' + #workspaceId")
-    public void evictMembershipCache(UUID userId, UUID workspaceId) {
-        log.debug("Evicting membership cache for user {} and workspace {}", userId, workspaceId);
+        return membershipRepository.save(membership);
     }
 }
