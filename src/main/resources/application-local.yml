@@ -1,33 +1,11 @@
 server:
   port: 8080
 
-spring:
-  flyway:
-    baseline-on-migrate: true
-    locations: classpath:db/migration,classpath:db/seed
-    validate-on-migrate: true
-    placeholders:
-      # User 1 (John Bob - Owner)
-      user1_id: ${beaver.dev.mock-context.users[0].userId}
-      user1_workspace_id:  ${beaver.dev.mock-context.users[0].workspaceId}
-      user1_role:  ${beaver.dev.mock-context.users[0].role}
-      user1_name: John Bob
-      user1_email: john.bob@example.com
-      # User 2 (Robert Wagner - Write)
-      user2_id: ${beaver.dev.mock-context.users[1].userId}
-      user2_workspace_id: ${beaver.dev.mock-context.users[1].workspaceId}
-      user2_role: ${beaver.dev.mock-context.users[1].role}
-      user2_name: Robert Wagner
-      user2_email: robert.wagner@example.com
-      # Common values
-      password_hash: $2a$10$igLWo/lAzYgeWhDk.HvLQ.02IVPz5P7sioscx9kM/QNl3VhDCcda2 # password: password
-
+# Beaver Auth Mock Context for local development
 beaver:
-  dev:
+  auth:
     mock-context:
       enabled: true
-      gateway:
-        secret: ${gateway.secret}
       default-user: 0
       users:
         - userId: 550e8400-e29b-41d4-a716-446655440001
@@ -36,6 +14,28 @@ beaver:
         - userId: 550e8400-e29b-41d4-a716-446655440003
           workspaceId: 550e8400-e29b-41d4-a716-446655440004
           role: WRITE
+
+# Local seed data for FlyWay. See db/migration/seed/*.sql
+spring:
+  flyway:
+    baseline-on-migrate: true
+    locations: classpath:db/migration,classpath:db/seed
+    validate-on-migrate: true
+    placeholders:
+      # User 1 (John Bob)
+      user1_id: ${beaver.auth.mock-context.users[0].userId}
+      user1_workspace_id:  ${beaver.auth.mock-context.users[0].workspaceId}
+      user1_role:  ${beaver.auth.mock-context.users[0].role}
+      user1_name: John Bob
+      user1_email: john.bob@example.com
+      user1_password: $2a$10$igLWo/lAzYgeWhDk.HvLQ.02IVPz5P7sioscx9kM/QNl3VhDCcda2
+      # User 2 (Robert Wagner)
+      user2_id: ${beaver.auth.mock-context.users[1].userId}
+      user2_workspace_id: ${beaver.auth.mock-context.users[1].workspaceId}
+      user2_role: ${beaver.auth.mock-context.users[1].role}
+      user2_name: Robert Wagner
+      user2_email: robert.wagner@example.com
+      user2_password: $2a$10$igLWo/lAzYgeWhDk.HvLQ.02IVPz5P7sioscx9kM/QNl3VhDCcda2
 
 logging:
   level:
