@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,7 @@ public class AuthController {
     private final AuthCookieService cookieService;
     private final PasswordEncoder passwordEncoder;
 
-    @PostMapping("/login")
+    @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         Optional<User> userOpt = userService.findByEmail(request.email());
         if (userOpt.isEmpty()) {
@@ -92,7 +93,7 @@ public class AuthController {
             );
     }
 
-    @PostMapping("/signup")
+    @PostMapping(value = "/signup", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         Optional<User> existingUser = userService.findByEmail(request.email());
         if (existingUser.isPresent()) {
@@ -135,7 +136,7 @@ public class AuthController {
             );
     }
 
-    @PostMapping("/refresh")
+    @PostMapping(value = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponse> refresh(HttpServletRequest request) {
         String refreshToken = cookieService.extractRefreshToken(request);
         if (refreshToken == null) {
@@ -177,7 +178,7 @@ public class AuthController {
             );
     }
 
-    @PostMapping("/logout")
+    @PostMapping(value = "/logout", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponse> logout() {
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookieService.clearAccessTokenCookie().toString())

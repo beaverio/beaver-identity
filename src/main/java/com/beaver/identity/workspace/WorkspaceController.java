@@ -26,7 +26,7 @@ public class WorkspaceController {
     private final AuthCookieService cookieService;
     private final GenericMapper mapper;
 
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkspaceDto> createWorkspace(
             @RequestHeader("X-User-Id") UUID userId,
             @Valid @RequestBody CreateWorkspaceRequest request) {
@@ -35,7 +35,7 @@ public class WorkspaceController {
         return ResponseEntity.ok(mapper.toDto(workspace, WorkspaceDto.class));
     }
 
-    @GetMapping("/current")
+    @GetMapping(value = "/current", produces = MediaType.APPLICATION_JSON_VALUE)
     @RequiresRole(Role.READ)
     public ResponseEntity<WorkspaceDto> getWorkspace(
             @RequestHeader("X-Workspace-Id") UUID workspaceId) {
@@ -65,7 +65,7 @@ public class WorkspaceController {
     }
 
 
-    @PostMapping("/switch-workspace")
+    @PostMapping(value = "/switch-workspace", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponse> switchWorkspace(
             @RequestHeader("X-User-Id") UUID userId,
             @Valid @RequestBody SwitchWorkspaceRequest request
