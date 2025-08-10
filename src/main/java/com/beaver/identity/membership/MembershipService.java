@@ -9,6 +9,7 @@ import com.beaver.identity.user.entity.User;
 import com.beaver.identity.workspace.entity.Workspace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,6 +31,7 @@ public class MembershipService {
 
     private final IMembershipRepository membershipRepository;
     private final WorkspaceRoleService roleService;
+    private final CacheManager cacheManager;
 
     @Transactional(readOnly = true)
     @Cacheable(key = "'user:' + #userId")
@@ -64,5 +66,23 @@ public class MembershipService {
                 .build();
 
         return membershipRepository.save(membership);
+    }
+
+    public void evictCache(UUID userId) {
+        log.debug("Evicting all membership cache entries for user: {}", userId);
+
+        var cache = cacheManager.getCache("memberships");
+        if (cache != null) {
+            String userCacheKey = "user:" + userId;
+            cache.evict(userCacheKey);
+            log.debug("Evicted cache key: {}", userCacheKey);
+
+            List<WorkspaceMembership> memberships = membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
+            memberships.forEach(membership -> {
+                String userWorkspaceCacheKey = "user:" + userId + ":workspace:" + membership.getWorkspace().getId();
+                cache.evict(userWorkspaceCacheKey);
+                log.debug("Evicted cache key: {}", userWorkspaceCacheKey);
+            });
+        }
     }
 }

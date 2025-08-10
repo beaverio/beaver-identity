@@ -46,10 +46,11 @@ public class WorkspaceController {
     @PatchMapping(value = "/current", produces = MediaType.APPLICATION_JSON_VALUE)
     @RequiresRole(Role.WRITE)
     public ResponseEntity<WorkspaceDto> updateWorkspace(
+            @RequestHeader("X-User-Id") UUID userId,
             @RequestHeader("X-Workspace-Id") UUID workspaceId,
             @Valid @RequestBody UpdateWorkspaceRequest updateWorkspaceRequest)
     {
-        Workspace workspace = workspaceService.updateWorkspace(workspaceId, updateWorkspaceRequest);
+        Workspace workspace = workspaceService.updateWorkspace(userId, workspaceId, updateWorkspaceRequest);
         return ResponseEntity.ok(mapper.toDto(workspace, WorkspaceDto.class));
     }
 

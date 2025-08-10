@@ -21,7 +21,6 @@ import com.beaver.identity.workspace.enums.WorkspaceStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -64,6 +63,7 @@ public class WorkspaceService {
         User owner = userService.findById(ownerId);
         WorkspaceMembership membership = membershipService.addUserToWorkspace(owner, workspace, Role.OWNER);
         log.info("Added user {} as owner of workspace {} with membership {}", ownerId, workspace.getId(), membership.getId());
+        membershipService.evictCache(ownerId);
 
         return workspace;
     }
@@ -76,13 +76,15 @@ public class WorkspaceService {
     }
 
     @CachePut(key = "'id:' + #workspaceId")
-    public Workspace updateWorkspace(UUID workspaceId, UpdateWorkspaceRequest updateWorkspaceRequest) {
+    public Workspace updateWorkspace(UUID userId, UUID workspaceId, UpdateWorkspaceRequest updateWorkspaceRequest) {
         Workspace existingWorkspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new NotFoundException("Workspace not found"));
 
         mapper.updateEntity(updateWorkspaceRequest, existingWorkspace);
+        Workspace updatedWorkspace = workspaceRepository.save(existingWorkspace);
+        membershipService.evictCache(userId);
 
-        return workspaceRepository.save(existingWorkspace);
+        return updatedWorkspace;
     }
 
     @CachePut(key = "'id:' + #result.workspace.id")
